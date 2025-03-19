@@ -1,5 +1,6 @@
 package controller;
 
+import org.tinylog.Logger;
 import external.AuthenticationService;
 import external.EmailService;
 import model.*;
@@ -54,7 +55,12 @@ public class AdminStaffController extends StaffController {
     }
 
     private void addFAQItem(FAQSection currentSection) {
+        // Get current user's email for logging
+        String currentUserEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
+
         // When adding an item at root of FAQ, creating a section is mandatory
+
+
         boolean createSection = (currentSection == null);
         if (!createSection) {
             createSection = view.getYesNoInput("Would you like to create a new topic for the FAQ item?");
@@ -83,9 +89,36 @@ public class AdminStaffController extends StaffController {
             currentSection = newSection;
         }
 
+        String sectionTopic = currentSection.getTopic();
+
         String question = view.getInput("Enter the question for new FAQ item: ");
+
+        // checking question
+        if (question.strip().isEmpty()) {
+            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the question cannot be empty", System.currentTimeMillis(), currentUserEmail, sectionTopic);
+            view.displayError("The Question is empty");
+            return;
+        }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
-        currentSection.getItems().add(new FAQItem(question, answer));
+        if (answer.strip().isEmpty()) {
+            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the answer cannot be empty", System.currentTimeMillis(), currentUserEmail, sectionTopic);
+            view.displayError("The answer is empty");
+            return;
+        }
+
+        boolean addTag = view.getYesNoInput("Would you like to add a course tags");
+
+        FAQItem newItem;
+
+        // TODO have to wait to implement this - need methods getCourseManager(), viewCourses() etc to do this part of the addFAQ part
+        if (addTag) {
+
+
+        } else {
+            newItem = new FAQItem(question, answer);
+            currentSection.getItems().add(newItem);
+
+        }
 
         String emailSubject = "FAQ topic '" + currentSection.getTopic() + "' updated";
         StringBuilder emailContentBuilder = new StringBuilder();
