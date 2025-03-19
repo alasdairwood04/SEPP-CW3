@@ -39,4 +39,15 @@ public class SharedContext {
     public Set<String> usersSubscribedToFAQTopic(String topic) {
         return faqTopicsUpdateSubscribers.getOrDefault(topic, new HashSet<>());
     }
+
+    // TODO implement this method
+    public String getCurrentUserRole(){
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    // TODO implement this method
+    public String getCurrentUserEmail(){
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
 }
