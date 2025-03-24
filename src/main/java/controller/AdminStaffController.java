@@ -59,8 +59,6 @@ public class AdminStaffController extends StaffController {
         String currentUserEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
 
         // When adding an item at root of FAQ, creating a section is mandatory
-
-
         boolean createSection = (currentSection == null);
         if (!createSection) {
             createSection = view.getYesNoInput("Would you like to create a new topic for the FAQ item?");
@@ -71,11 +69,12 @@ public class AdminStaffController extends StaffController {
             FAQSection newSection = new FAQSection(newTopic);
 
             if (currentSection == null) {
-                if (sharedContext.getFAQ().getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
+                FAQManager faqManager = new FAQManager();
+                if (faqManager.getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
                     view.displayWarning("Topic '" + newTopic + "' already exists!");
-                    newSection = sharedContext.getFAQ().getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
+                    newSection = faqManager.getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
                 } else {
-                    sharedContext.getFAQ().addSection(newSection);
+                    faqManager.addSection(newTopic);
                     view.displayInfo("Created topic '" + newTopic + "'");
                 }
             } else {
