@@ -4,9 +4,11 @@ import java.util.*;
 import model.*;
 
 public class FAQManager {
+    private final FAQ faq;
     private final List<FAQSection> sections = new LinkedList<>();
 
     public FAQManager() {
+        this.faq = new FAQ();
     }
 
     public void addSection(String topic){
@@ -29,4 +31,7 @@ public class FAQManager {
         return sections;
     }
 
+    public FAQ getFAQ() {
+        return this.faq;
+    }
 }
