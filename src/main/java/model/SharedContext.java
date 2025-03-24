@@ -7,26 +7,40 @@ public class SharedContext {
     public User currentUser;
 
     public final List<Inquiry> inquiries;
-    public final FAQ faq;
+    private final FAQManager faqManager;
+    private final CourseManager courseManager;
 
     public SharedContext() {
         this.currentUser = new Guest();
         this.inquiries = new ArrayList<>();
-        faq = new FAQ();
+        this.faqManager = new FAQManager();
+        this.courseManager = new CourseManager();
     }
 
     public FAQ getFAQ() {
-        return faq;
+        return faqManager.getFAQ();
     }
 
-    // TODO implement this method
-    public String getCurrentUserRole(){
-        throw new UnsupportedOperationException("Not implemented yet");
+    public FAQManager getFAQManager() {
+        return faqManager;
     }
 
-    // TODO implement this method
-    public String getCurrentUserEmail(){
-        throw new UnsupportedOperationException("Not implemented yet");
+    public CourseManager getCourseManager() {
+        return courseManager;
+    }
+
+    public String getCurrentUserEmail() {
+        if (currentUser instanceof AuthenticatedUser) {
+            return ((AuthenticatedUser) currentUser).getEmail();
+        }
+        return null;
+    }
+
+    public String getCurrentUserRole() {
+        if (currentUser instanceof AuthenticatedUser) {
+            return ((AuthenticatedUser) currentUser).getRole();
+        }
+        return "Guest";
     }
 
 }
