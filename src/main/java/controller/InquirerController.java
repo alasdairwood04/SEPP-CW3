@@ -5,6 +5,7 @@ import external.EmailService;
 import model.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.tinylog.Logger;
 import view.View;
 
 import java.io.IOException;
@@ -28,24 +29,67 @@ public class InquirerController extends Controller {
             userEmail = null;
         }
 
+        String courseTag = null;
+        if (view.getYesNoInput("Would you like to filter by course code?")) {
+            courseTag = view.getInput("Enter the course code");
+
+            // validate course code if provided
+            if (courseTag.trim().isEmpty()) {
+                courseTag = null;
+            } else {
+                // verify the course code exists
+                if (!sharedContext.getCourseManager().hasCourse(courseTag)) {
+                    view.displayError("Course with code " + courseTag + " does not exist");
+                    String actionDetails = "consultFAQ - filter by course - " + courseTag;
+                    org.tinylog.Logger.error("User: {} - Action: consultFAQ - Input: {} - Status: FAILURE (Error: The tag must correspond to a course code)",
+                            userEmail != null ? userEmail : "Guest", courseTag);
+                    courseTag = null;
+                }
+            }
+        }
+
         int optionNo = 0;
         while (currentSection != null || optionNo != -1) {
             if (currentSection == null) {
-                view.displayFAQ(sharedContext.getFAQ());
+                view.displayFAQ(sharedContext.getFAQManager().getFAQ());
                 view.displayInfo("[-1] Return to main menu");
             } else {
-                view.displayFAQSection(currentSection);
+                view.displayInfo(currentSection.getTopic());
+                view.displayDivider();
+
+                // Find items matching course tag if filtering is active
+                List<FAQItem> relevantItems = new ArrayList<>();
+                if (courseTag != null) {
+                    for (FAQItem item : currentSection.getItems()) {
+                        if (item.hasTag(courseTag)) {
+                            relevantItems.add(item);
+                        }
+                    }
+                } else {
+                    relevantItems.addAll(currentSection.getItems());
+                }
+
+                // Display items or notification if no matches
+                if (!relevantItems.isEmpty()) {
+                    for (FAQItem item : relevantItems) {
+                        view.displayInfo(item.getId() + ". " + item.getQuestion());
+                        view.displayInfo("> " + item.getAnswer());
+                    }
+                } else if (courseTag != null) {
+                    view.displayInfo("There are no questions for course '" + courseTag + "' in this topic.");
+                    view.displayInfo("You can navigate to other topics to find relevant questions.");
+                }
+
+                view.displayInfo("Subsections:");
+                int i = 0;
+                for (FAQSection subsection : currentSection.getSubsections()) {
+                    view.displayInfo("[" + i++ + "] " + subsection.getTopic());
+                }
+
                 view.displayInfo("[-1] Return to " + (currentSection.getParent() == null ? "FAQ" : currentSection.getParent().getTopic()));
 
-                if (userEmail == null) {
-                    view.displayInfo("[-2] Request updates for this topic");
-                    view.displayInfo("[-3] Stop receiving updates for this topic");
-                } else {
-                    if (sharedContext.usersSubscribedToFAQTopic(currentSection.getTopic()).contains(userEmail)) {
-                        view.displayInfo("[-2] Stop receiving updates for this topic");
-                    } else {
-                        view.displayInfo("[-2] Request updates for this topic");
-                    }
+                if (courseTag != null) {
+                    view.displayInfo("Note: Currently filtering by course: " + courseTag);
                 }
             }
 
@@ -54,43 +98,31 @@ public class InquirerController extends Controller {
             try {
                 optionNo = Integer.parseInt(input);
 
-                if (optionNo != -1 && optionNo != -2 && optionNo != -3) {
+                if (optionNo != -1) {
                     try {
                         if (currentSection == null) {
-                            currentSection = sharedContext.getFAQ().getSections().get(optionNo);
+                            currentSection = sharedContext.getFAQManager().getFAQ().getSections().get(optionNo);
                         } else {
                             currentSection = currentSection.getSubsections().get(optionNo);
                         }
                     } catch (IndexOutOfBoundsException e) {
                         view.displayError("Invalid option: " + optionNo);
                     }
+                } else if (optionNo == -1 && currentSection != null) {
+                    currentSection = currentSection.getParent();
+                    optionNo = 0;
                 }
 
-                if (currentSection != null) {
-                    String topic = currentSection.getTopic();
-
-                    if (userEmail == null && optionNo == -2) {
-                        requestFAQUpdates(null, topic);
-                    } else if (userEmail == null && optionNo == -3) {
-                        stopFAQUpdates(null, topic);
-                    } else if (optionNo == -2) {
-                        if (sharedContext.usersSubscribedToFAQTopic(topic).contains(userEmail)) {
-                            stopFAQUpdates(userEmail, topic);
-                        } else {
-                            requestFAQUpdates(userEmail, topic);
-                        }
-                    } else if (optionNo == -1) {
-                        currentSection = currentSection.getParent();
-                        optionNo = 0;
-                    }
-                }
             } catch (NumberFormatException e) {
                 view.displayError("Invalid option: " + input);
             }
         }
+
+        // Log successful completion
+        org.tinylog.Logger.info("User: {} - Action: consultFAQ - Input: {} - Status: SUCCESS",
+                userEmail != null ? userEmail : "Guest",
+                courseTag != null ? "courseTag=" + courseTag : "-");
     }
-
-
     public void contactStaff() {
         String inquirerEmail;
         if (sharedContext.currentUser instanceof AuthenticatedUser) {
