@@ -4,7 +4,7 @@ import java.util.*;
 import model.*;
 
 public class FAQManager {
-    private final List<FAQSection> sections = new ArrayList<>();
+    private final List<FAQSection> sections = new LinkedList<>();
 
     public FAQManager() {
     }
