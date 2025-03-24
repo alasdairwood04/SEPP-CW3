@@ -90,29 +90,6 @@ public class InquirerController extends Controller {
         }
     }
 
-    private void requestFAQUpdates(String userEmail, String topic) {
-        if (userEmail == null) {
-            userEmail = view.getInput("Please enter your email address: ");
-        }
-        boolean success = sharedContext.registerForFAQUpdates(userEmail, topic);
-        if (success) {
-            view.displaySuccess("Successfully registered " + userEmail + " for updates on '" + topic + "'");
-        } else {
-            view.displayError("Failed to register " + userEmail + " for updates on '" + topic + "'. Perhaps this email was already registered?");
-        }
-    }
-
-    private void stopFAQUpdates(String userEmail, String topic) {
-        if (userEmail == null) {
-            userEmail = view.getInput("Please enter your email address: ");
-        }
-        boolean success = sharedContext.unregisterForFAQUpdates(userEmail, topic);
-        if (success) {
-            view.displaySuccess("Successfully unregistered " + userEmail + " for updates on '" + topic + "'");
-        } else {
-            view.displayError("Failed to unregister " + userEmail + " for updates on '" + topic + "'. Perhaps this email was not registered?");
-        }
-    }
 
     public void contactStaff() {
         String inquirerEmail;
