@@ -37,10 +37,7 @@ public class FAQItem {
     }
 
     public boolean hasTag(String courseTag) {
-        if (this.courseTag == null) {
-            return false;
-        }
-        return this.courseTag.equals(courseTag);
+        return this.courseTag != null && this.courseTag.equals(courseTag);
     }
 }
 
