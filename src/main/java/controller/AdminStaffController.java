@@ -18,7 +18,7 @@ public class AdminStaffController extends StaffController {
 
         while (true) {
             if (currentSection == null) {
-                view.displayFAQ(sharedContext.getFAQ());
+                view.displayFAQ(sharedContext.getFAQManager().getFAQ());
                 view.displayInfo("[-1] Return to main menu");
             } else {
                 view.displayFAQSection(currentSection);
@@ -40,7 +40,7 @@ public class AdminStaffController extends StaffController {
                 } else {
                     try {
                         if (currentSection == null) {
-                            currentSection = sharedContext.getFAQ().getSections().get(optionNo);
+                            currentSection = sharedContext.getFAQManager().getFAQ().getSections().get(optionNo);
                         } else {
                             currentSection = currentSection.getSubsections().get(optionNo);
                         }
@@ -69,12 +69,11 @@ public class AdminStaffController extends StaffController {
             FAQSection newSection = new FAQSection(newTopic);
 
             if (currentSection == null) {
-                FAQManager faqManager = new FAQManager();
-                if (faqManager.getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
+                if (sharedContext.getFAQManager().getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
                     view.displayWarning("Topic '" + newTopic + "' already exists!");
-                    newSection = faqManager.getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
+                    newSection = sharedContext.getFAQManager().getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
                 } else {
-                    faqManager.addSection(newTopic);
+                    sharedContext.getFAQManager().addSection(newTopic);
                     view.displayInfo("Created topic '" + newTopic + "'");
                 }
             } else {
