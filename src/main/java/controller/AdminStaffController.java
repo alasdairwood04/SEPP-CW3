@@ -69,6 +69,7 @@ public class AdminStaffController extends StaffController {
         if (createSection) {
             String newTopic = view.getInput("Enter new topic title: ");
             FAQSection newSection = new FAQSection(newTopic);
+
             if (currentSection == null) {
                 if (sharedContext.getFAQ().getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
                     view.displayWarning("Topic '" + newTopic + "' already exists!");
@@ -89,20 +90,26 @@ public class AdminStaffController extends StaffController {
             currentSection = newSection;
         }
 
+        // Display header for clarity
+        view.displayInfo("=== Add New FAQ Question-Answer Pair===");
+
         String sectionTopic = currentSection.getTopic();
 
         String question = view.getInput("Enter the question for new FAQ item: ");
 
         // checking question
-        if (question.strip().isEmpty()) {
-            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the question cannot be empty", System.currentTimeMillis(), currentUserEmail, sectionTopic);
-            view.displayError("The Question is empty");
+        if (question.isBlank()) {
+            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the question cannot be empty",
+                    System.currentTimeMillis(), currentUserEmail, sectionTopic);
+            view.displayError("The question cannot be empty");
             return;
         }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
-        if (answer.strip().isEmpty()) {
-            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the answer cannot be empty", System.currentTimeMillis(), currentUserEmail, sectionTopic);
-            view.displayError("The answer is empty");
+
+        if (answer.isBlank()) {
+            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the answer cannot be empty",
+                    System.currentTimeMillis(), currentUserEmail, sectionTopic);
+            view.displayError("The answer cannot be empty");
             return;
         }
 
@@ -112,42 +119,61 @@ public class AdminStaffController extends StaffController {
 
         // TODO have to wait to implement this - need methods getCourseManager(), viewCourses() etc to do this part of the addFAQ part
         if (addTag) {
+            // show all available courses
+            CourseManager courseManager = new CourseManager();
+            String fullCourseDetailsAsString  = courseManager.viewCourses();
 
+            // check if there is any courses
+            if (fullCourseDetailsAsString.isEmpty()) {
+                view.displayInfo("No courses available in the system");
 
+                // proceed without a tag if no courses
+                currentSection.addItem(question, answer);
+            } else {
+                view.displayInfo("Available courses:");
+
+                String[] courseLines = fullCourseDetailsAsString.split("\n");
+                for (String line : courseLines) {
+                    String[] parts = line.split(":", 2);
+                    if (parts.length >= 2) {
+                        String courseCode = parts[0].trim();
+                        String courseName = parts[1].trim();
+                        view.displayInfo(courseCode + " : " + courseName);
+                    }
+                }
+                // get course code input
+                String courseTag = view.getInput("Enter course code to add as tag:");
+
+                // validate input
+                if (!courseTag.trim().isEmpty() && courseManager.hasCourse(courseTag)) {
+                    // add with tag
+                    currentSection.addItem(question, answer, courseTag);
+
+                    // log
+                    Logger.info("{}, {}, addFAQItem, {}, SUCCESS (Added FAQ item with course tag)",
+                            System.currentTimeMillis(), currentUserEmail, sectionTopic + " - with tag: "
+                                    + courseTag);
+                    view.displaySuccess("The new FAQ item was added");
+                } else {
+                    view.displayError("The tag must correspond to a course code");
+                    Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: The tag must correspond to a course code)",
+                            System.currentTimeMillis(), currentUserEmail, sectionTopic);
+
+                    // Fall back to adding without tag
+                    currentSection.addItem(question, answer);
+                }
+            }
         } else {
-            newItem = new FAQItem(question, answer);
-            currentSection.getItems().add(newItem);
-
+            // add without tag
+            currentSection.addItem(question, answer);
+            Logger.info("{}, {}, addFAQItem, {}, SUCCESS (Added FAQ item without course tag)",
+                    System.currentTimeMillis(), currentUserEmail, sectionTopic);
         }
 
-        String emailSubject = "FAQ topic '" + currentSection.getTopic() + "' updated";
-        StringBuilder emailContentBuilder = new StringBuilder();
-        emailContentBuilder.append("Updated Q&As:");
-        for (FAQItem item : currentSection.getItems()) {
-            emailContentBuilder.append("\n\n");
-            emailContentBuilder.append("Q: ");
-            emailContentBuilder.append(item.getQuestion());
-            emailContentBuilder.append("\n");
-            emailContentBuilder.append("A: ");
-            emailContentBuilder.append(item.getAnswer());
-        }
-        String emailContent = emailContentBuilder.toString();
-
-        email.sendEmail(
-                ((AuthenticatedUser) sharedContext.currentUser).getEmail(),
-                SharedContext.ADMIN_STAFF_EMAIL,
-                emailSubject,
-                emailContent
-        );
-        for (String subscriberEmail : sharedContext.usersSubscribedToFAQTopic(currentSection.getTopic())) {
-            email.sendEmail(
-                    SharedContext.ADMIN_STAFF_EMAIL,
-                    subscriberEmail,
-                    emailSubject,
-                    emailContent
-            );
-        }
+        Logger.info("{}, {}, addFAQItem, {}, SUCCESS (A new FAQ item was added)",
+                System.currentTimeMillis(), currentUserEmail, sectionTopic);
         view.displaySuccess("Created new FAQ item");
+
     }
 
     public void manageInquiries() {
