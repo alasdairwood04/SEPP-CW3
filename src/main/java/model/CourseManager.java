@@ -13,4 +13,8 @@ public class CourseManager {
     public String viewCourses(){
         throw new UnsupportedOperationException("Not implemented yet");
     }
+
+    public boolean hasCourse(String courseTag) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }
