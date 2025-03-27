@@ -6,6 +6,9 @@ import model.Inquiry;
 
 public interface View {
     String getInput(String prompt);
+    //TODO add more input methods
+    int getIntegerInput(String prompt);
+
     boolean getYesNoInput(String prompt);
     void displayInfo(String text);
     void displaySuccess(String text);

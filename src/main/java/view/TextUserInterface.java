@@ -5,6 +5,7 @@ import model.*;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class TextUserInterface implements View {
@@ -104,6 +105,20 @@ public class TextUserInterface implements View {
         System.out.println("Assigned to: " + (inquiry.getAssignedTo() == null ? "No one" : inquiry.getAssignedTo()));
         System.out.println("Query:");
         System.out.println(inquiry.getContent());
+    }
+
+    //todo new input methods
+    @Override
+    public int getIntegerInput(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine();
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                displayWarning("Invalid number. Please enter an integer.");
+            }
+        }
     }
 
     
