@@ -6,7 +6,6 @@ import view.View;
 public class SharedContext {
     public static final String ADMIN_STAFF_EMAIL = "inquiries@hindeburg.ac.nz";
     public User currentUser;
-
     public final List<Inquiry> inquiries;
     private final FAQManager faqManager;
     private final CourseManager courseManager;
