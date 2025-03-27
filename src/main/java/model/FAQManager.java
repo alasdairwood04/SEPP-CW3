@@ -2,13 +2,16 @@ package model;
 
 import java.util.*;
 import model.*;
+import view.View;
 
 public class FAQManager {
     private final FAQ faq;
     private final List<FAQSection> sections = new LinkedList<>();
+    private final View view;
 
-    public FAQManager() {
+    public FAQManager(View view) {
         this.faq = new FAQ();
+        this.view = view;
     }
 
     public void addSection(String topic){
