@@ -22,11 +22,11 @@ public class InquirerController extends Controller {
 
     public void consultFAQ() {
         FAQSection currentSection = null;
-        String userEmail;
+        String userEmail = null;
+
+        // Set the user email if they're authenticated
         if (sharedContext.currentUser instanceof AuthenticatedUser) {
             userEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
-        } else {
-            userEmail = null;
         }
 
         String courseTag = null;
@@ -38,8 +38,9 @@ public class InquirerController extends Controller {
                 courseTag = null;
             } else {
                 // verify the course code exists
-                if (!sharedContext.getCourseManager().hasCourse(courseTag)) {
-                    view.displayError("Course with code " + courseTag + " does not exist");
+                CourseManager courseManager = sharedContext.getCourseManager();
+                if (!courseManager.hasCourse(courseTag)) {
+                    view.displayError("Course with code " + courseTag + " does not exist. Showing all FAQ items");
                     String actionDetails = "consultFAQ - filter by course - " + courseTag;
                     org.tinylog.Logger.error("User: {} - Action: consultFAQ - Input: {} - Status: FAILURE (Error: The tag must correspond to a course code)",
                             userEmail != null ? userEmail : "Guest", courseTag);
@@ -51,10 +52,11 @@ public class InquirerController extends Controller {
         int optionNo = 0;
         while (currentSection != null || optionNo != -1) {
             if (currentSection == null) {
+                // display top-level FAQ sections
                 view.displayFAQ(sharedContext.getFAQManager().getFAQ());
                 view.displayInfo("[-1] Return to main menu");
             } else {
-                view.displayInfo(currentSection.getTopic());
+                view.displayInfo(currentSection.getTopic() + (courseTag != null ? " (Filtered by  " + courseTag  + ")" : ""));
                 view.displayDivider();
 
                 // Find items matching course tag if filtering is active
@@ -66,31 +68,38 @@ public class InquirerController extends Controller {
                         }
                     }
                 } else {
+                    // if no tag, it will just display all (no filter)
                     relevantItems.addAll(currentSection.getItems());
                 }
 
                 // Display items or notification if no matches
                 if (!relevantItems.isEmpty()) {
                     for (FAQItem item : relevantItems) {
-                        view.displayInfo(item.getId() + ". " + item.getQuestion());
+                        view.displayInfo(item.getId() + " " + item.getQuestion());
                         view.displayInfo("> " + item.getAnswer());
+
+                        // only show course tag if not filterning and the item has a tag
+                        if (courseTag == null && item.getCourseTag() != null && !item.getCourseTag().isEmpty()) {
+                            view.displayInfo("> " + item.getCourseTag());
+                        }
+                        view.displayDivider();
                     }
                 } else if (courseTag != null) {
                     view.displayInfo("There are no questions for course '" + courseTag + "' in this topic.");
                     view.displayInfo("You can navigate to other topics to find relevant questions.");
                 }
 
-                view.displayInfo("Subsections:");
-                int i = 0;
-                for (FAQSection subsection : currentSection.getSubsections()) {
-                    view.displayInfo("[" + i++ + "] " + subsection.getTopic());
+                if (!currentSection.getSubsections().isEmpty()) {
+                    view.displayInfo("Subsections:");
+                    int i = 0;
+                    for (FAQSection subsection : currentSection.getSubsections()) {
+                        view.displayInfo("[" + i++ + "] " + subsection.getTopic());
+
+                    }
                 }
 
                 view.displayInfo("[-1] Return to " + (currentSection.getParent() == null ? "FAQ" : currentSection.getParent().getTopic()));
 
-                if (courseTag != null) {
-                    view.displayInfo("Note: Currently filtering by course: " + courseTag);
-                }
             }
 
             String input = view.getInput("Please choose an option: ");
@@ -108,7 +117,7 @@ public class InquirerController extends Controller {
                     } catch (IndexOutOfBoundsException e) {
                         view.displayError("Invalid option: " + optionNo);
                     }
-                } else if (optionNo == -1 && currentSection != null) {
+                } else if (currentSection != null) {
                     currentSection = currentSection.getParent();
                     optionNo = 0;
                 }
@@ -123,6 +132,8 @@ public class InquirerController extends Controller {
                 userEmail != null ? userEmail : "Guest",
                 courseTag != null ? "courseTag=" + courseTag : "-");
     }
+
+
     public void contactStaff() {
         String inquirerEmail;
         if (sharedContext.currentUser instanceof AuthenticatedUser) {
