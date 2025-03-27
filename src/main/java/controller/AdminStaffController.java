@@ -55,9 +55,6 @@ public class AdminStaffController extends StaffController {
     }
 
     private void addFAQItem(FAQSection currentSection) {
-        // Get current user's email for logging
-        String currentUserEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
-
         // When adding an item at root of FAQ, creating a section is mandatory
         boolean createSection = (currentSection == null);
         if (!createSection) {
@@ -91,22 +88,28 @@ public class AdminStaffController extends StaffController {
         // Display header for clarity
         view.displayInfo("=== Add New FAQ Question-Answer Pair===");
 
+
+        // Get current user's email for logging
+        String currentUserEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
         String sectionTopic = currentSection.getTopic();
 
+        // get question
         String question = view.getInput("Enter the question for new FAQ item: ");
-
-        // checking question
         if (question.isBlank()) {
-            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the question cannot be empty",
-                    System.currentTimeMillis(), currentUserEmail, sectionTopic);
+            Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: the question cannot be empty)",
+                    System.currentTimeMillis(),
+                    currentUserEmail,
+                    sectionTopic);
             view.displayError("The question cannot be empty");
             return;
         }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
 
         if (answer.isBlank()) {
-            Logger.error("{}, {}, addFAQItem, {}, FAILURE + the answer cannot be empty",
-                    System.currentTimeMillis(), currentUserEmail, sectionTopic);
+            Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: the answer cannot be empty)",
+                    System.currentTimeMillis(),
+                    currentUserEmail,
+                    sectionTopic);
             view.displayError("The answer cannot be empty");
             return;
         }
@@ -117,8 +120,11 @@ public class AdminStaffController extends StaffController {
 
         // TODO have to wait to implement this - need methods getCourseManager(), viewCourses() etc to do this part of the addFAQ part
         if (addTag) {
-            // show all available courses
-            CourseManager courseManager = new CourseManager();
+
+            // Get course manager from shared context
+            CourseManager courseManager = sharedContext.getCourseManager();
+
+            // Get course list
             String fullCourseDetailsAsString  = courseManager.viewCourses();
 
             // check if there is any courses
@@ -143,23 +149,25 @@ public class AdminStaffController extends StaffController {
                 String courseTag = view.getInput("Enter course code to add as tag:");
 
                 // validate input
-                if (!courseTag.trim().isEmpty() && courseManager.hasCourse(courseTag)) {
-                    // add with tag
-                    currentSection.addItem(question, answer, courseTag);
-
-                    // log
-                    Logger.info("{}, {}, addFAQItem, {}, SUCCESS (Added FAQ item with course tag)",
-                            System.currentTimeMillis(), currentUserEmail, sectionTopic + " - with tag: "
-                                    + courseTag);
-                    view.displaySuccess("The new FAQ item was added");
-                } else {
-                    view.displayError("The tag must correspond to a course code");
+                if (!courseManager.hasCourse(courseTag)) {
                     Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: The tag must correspond to a course code)",
-                            System.currentTimeMillis(), currentUserEmail, sectionTopic);
-
-                    // Fall back to adding without tag
-                    currentSection.addItem(question, answer);
+                            System.currentTimeMillis(),
+                            currentUserEmail,
+                            sectionTopic);
+                    view.displayError("The tag must correspond to a course code");
+                    return; // Exit method
                 }
+                currentSection.addItem(question, answer, courseTag);
+
+
+                // log and display success
+                view.displaySuccess("The tag must correspond to a course code");
+                Logger.info("{}, {}, addFAQItem, {}, SUCCESS (A new FAQ item was added with tag {})",
+                        System.currentTimeMillis(),
+                        currentUserEmail,
+                        sectionTopic,
+                        courseTag);
+                view.displaySuccess("A new FAQ item was added with tag " + courseTag);
             }
         } else {
             // add without tag
@@ -169,7 +177,9 @@ public class AdminStaffController extends StaffController {
         }
 
         Logger.info("{}, {}, addFAQItem, {}, SUCCESS (A new FAQ item was added)",
-                System.currentTimeMillis(), currentUserEmail, sectionTopic);
+                System.currentTimeMillis(),
+                currentUserEmail,
+                sectionTopic);
         view.displaySuccess("Created new FAQ item");
 
     }
