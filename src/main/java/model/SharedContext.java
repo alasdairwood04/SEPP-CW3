@@ -5,6 +5,8 @@ import view.View;
 
 public class SharedContext {
     public static final String ADMIN_STAFF_EMAIL = "inquiries@hindeburg.ac.nz";
+
+    private final View view;
     public User currentUser;
     public final List<Inquiry> inquiries;
     private final FAQManager faqManager;
@@ -13,6 +15,7 @@ public class SharedContext {
     public SharedContext(View view) {
         this.currentUser = new Guest();
         this.inquiries = new ArrayList<>();
+        this.view = view;
         this.faqManager = new FAQManager(view);
         this.courseManager = new CourseManager();
     }
