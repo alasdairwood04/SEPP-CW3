@@ -128,21 +128,21 @@ public class AdminStaffController extends StaffController {
             String fullCourseDetailsAsString  = courseManager.viewCourses();
 
             // check if there is any courses
-            if (fullCourseDetailsAsString.isEmpty()) {
+            if (fullCourseDetailsAsString.equals("No courses available.")) {
                 view.displayInfo("No courses available in the system");
 
-                // proceed without a tag if no courses
-                currentSection.addItem(question, answer);
             } else {
                 view.displayInfo("Available courses:");
 
                 String[] courseLines = fullCourseDetailsAsString.split("\n");
                 for (String line : courseLines) {
-                    String[] parts = line.split(":", 2);
-                    if (parts.length >= 2) {
-                        String courseCode = parts[0].trim();
-                        String courseName = parts[1].trim();
-                        view.displayInfo(courseCode + " : " + courseName);
+                    if (!line.isEmpty()) {
+                        String[] parts = line.split(" - ", 2);
+                        if (parts.length >= 2) {
+                            String courseCode = parts[0].trim();
+                            String courseName = parts[1].trim();
+                            view.displayInfo(courseCode + " : " + courseName);
+                        }
                     }
                 }
                 // get course code input
@@ -157,23 +157,12 @@ public class AdminStaffController extends StaffController {
                     view.displayError("The tag must correspond to a course code");
                     return; // Exit method
                 }
+                // add with tag
                 currentSection.addItem(question, answer, courseTag);
-
-
-                // log and display success
-                view.displaySuccess("The tag must correspond to a course code");
-                Logger.info("{}, {}, addFAQItem, {}, SUCCESS (A new FAQ item was added with tag {})",
-                        System.currentTimeMillis(),
-                        currentUserEmail,
-                        sectionTopic,
-                        courseTag);
-                view.displaySuccess("A new FAQ item was added with tag " + courseTag);
             }
         } else {
             // add without tag
             currentSection.addItem(question, answer);
-            Logger.info("{}, {}, addFAQItem, {}, SUCCESS (Added FAQ item without course tag)",
-                    System.currentTimeMillis(), currentUserEmail, sectionTopic);
         }
 
         Logger.info("{}, {}, addFAQItem, {}, SUCCESS (A new FAQ item was added)",
@@ -181,7 +170,6 @@ public class AdminStaffController extends StaffController {
                 currentUserEmail,
                 sectionTopic);
         view.displaySuccess("Created new FAQ item");
-
     }
 
     public void manageInquiries() {
