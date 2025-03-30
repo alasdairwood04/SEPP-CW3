@@ -20,7 +20,7 @@ public class AdminStaffController extends StaffController {
 
         while (true) {
             if (currentSection == null) {
-                view.displayFAQ(sharedContext.getFAQManager().getFAQ());
+                view.displayFAQ(sharedContext.getFAQManager());
                 view.displayInfo("[-1] Return to main menu");
             } else {
                 view.displayFAQSection(currentSection);
@@ -42,7 +42,7 @@ public class AdminStaffController extends StaffController {
                 } else {
                     try {
                         if (currentSection == null) {
-                            currentSection = sharedContext.getFAQManager().getFAQ().getSections().get(optionNo);
+                            currentSection = sharedContext.getFAQManager().getSections().get(optionNo);
                         } else {
                             currentSection = currentSection.getSubsections().get(optionNo);
                         }
@@ -138,7 +138,8 @@ public class AdminStaffController extends StaffController {
             // check if there is any courses
             if (fullCourseDetailsAsString.equals("No courses available.")) {
                 view.displayInfo("No courses available in the system");
-
+                // add without tag
+                currentSection.addItem(question, answer);
             } else {
                 view.displayInfo("Available courses:");
 
@@ -184,8 +185,6 @@ public class AdminStaffController extends StaffController {
                 "SUCCESS (A new FAQ item was added)"
         );
         view.displaySuccess("Created new FAQ item");
-
-
     }
 
 

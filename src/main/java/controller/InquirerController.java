@@ -53,7 +53,7 @@ public class InquirerController extends Controller {
         while (currentSection != null || optionNo != -1) {
             if (currentSection == null) {
                 // display top-level FAQ sections
-                view.displayFAQ(sharedContext.getFAQManager().getFAQ());
+                view.displayFAQ(sharedContext.getFAQManager());
                 view.displayInfo("[-1] Return to main menu");
             } else {
                 view.displayInfo(currentSection.getTopic() + (courseTag != null ? " (Filtered by  " + courseTag  + ")" : ""));
@@ -110,7 +110,7 @@ public class InquirerController extends Controller {
                 if (optionNo != -1) {
                     try {
                         if (currentSection == null) {
-                            currentSection = sharedContext.getFAQManager().getFAQ().getSections().get(optionNo);
+                            currentSection = sharedContext.getFAQManager().getSections().get(optionNo);
                         } else {
                             currentSection = currentSection.getSubsections().get(optionNo);
                         }

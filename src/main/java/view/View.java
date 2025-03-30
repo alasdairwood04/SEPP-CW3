@@ -1,6 +1,7 @@
 package view;
 
 import model.FAQ;
+import model.FAQManager;
 import model.FAQSection;
 import model.Inquiry;
 
@@ -16,7 +17,7 @@ public interface View {
     void displayError(String text);
     void displayException(Exception e);
     void displayDivider();
-    void displayFAQ(FAQ faq);
+    void displayFAQ(FAQManager faq);
     void displayFAQSection(FAQSection section);
     void displayInquiry(Inquiry inquiry);
 }
