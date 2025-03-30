@@ -21,7 +21,7 @@ public class FAQSection {
 
     // add item without courseTag
     public void addItem(String question, String answer) {
-        int id = items.size();
+        int id = items.size() + 1;
         items.add(new FAQItem(id, question, answer));
     }
 

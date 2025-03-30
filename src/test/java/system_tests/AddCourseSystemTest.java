@@ -10,6 +10,7 @@ import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import view.TextUserInterface;
+import view.View;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -21,19 +22,25 @@ public class AddCourseSystemTest extends TUITest {
 
     private SharedContext context;
     private AdminController controller;
+    private View view;
 
     @BeforeEach
     public void setUp() throws Exception {
-        context = SharedContext.getInstance();
-        loginAsAdminStaff(context);
-
+        //context = SharedContext.getInstance();
+        //loginAsAdminStaff(context);
+        //controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        // Create a new SharedContext with a view
+        view = new TextUserInterface();
+        context = new SharedContext(new TextUserInterface());
+        context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
         controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
+
     }
 
     @Test
     public void testLoginAsAdminStaff() throws URISyntaxException, IOException, ParseException {
         setMockInput("admin1", "admin1pass");
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         GuestController guestController = new GuestController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
         startOutputCapture();
         guestController.login();
@@ -52,7 +59,7 @@ public class AddCourseSystemTest extends TUITest {
                 "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
         AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
@@ -75,7 +82,7 @@ public class AddCourseSystemTest extends TUITest {
                 "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
         AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
@@ -96,7 +103,7 @@ public class AddCourseSystemTest extends TUITest {
                 "3", "2", "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
         AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
@@ -116,7 +123,7 @@ public class AddCourseSystemTest extends TUITest {
                 "3", "2", "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
         AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
 
@@ -150,7 +157,7 @@ public class AddCourseSystemTest extends TUITest {
                 "1", "1", "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
         AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
 

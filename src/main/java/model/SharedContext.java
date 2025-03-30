@@ -6,13 +6,8 @@ import view.View;
 public class SharedContext {
     public static final String ADMIN_STAFF_EMAIL = "inquiries@hindeburg.ac.nz";
 
-    private static final SharedContext instance = new SharedContext();
 
-    public static SharedContext getInstance() {
-        return instance;
-    }
-
-    private final View view;
+    private View view;
     public User currentUser;
     public final List<Inquiry> inquiries;
     private final FAQManager faqManager;
@@ -25,7 +20,7 @@ public class SharedContext {
         this.view = view;
         this.faqManager = new FAQManager(view);
         this.studentTimetables = new HashMap<>(); // TODO: initialize timetable storage
-        this.courseManager = new CourseManager(); //TODO : initialize course manager
+        this.courseManager = new CourseManager(view); //TODO : initialize course manager
     }
 
     public FAQ getFAQ() {
@@ -40,6 +35,10 @@ public class SharedContext {
 
     public CourseManager getCourseManager() {
         return this.courseManager;
+    }
+
+    public View getView() {
+        return this.view;
     }
 
     // TODO: Get the student's timetable by email. If not present, create a new one.

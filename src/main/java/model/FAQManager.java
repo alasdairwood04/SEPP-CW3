@@ -8,6 +8,7 @@ public class FAQManager {
     private final FAQ faq;
     private final List<FAQSection> sections = new LinkedList<>();
     private final View view;
+    private SharedContext sharedContext;
 
     public FAQManager(View view) {
         this.faq = new FAQ();

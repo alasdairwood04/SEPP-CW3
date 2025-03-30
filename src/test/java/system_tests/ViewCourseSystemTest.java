@@ -8,6 +8,7 @@ import model.SharedContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import view.TextUserInterface;
+import view.View;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -15,12 +16,17 @@ public class ViewCourseSystemTest extends TUITest {
 
     private SharedContext context;
     private AdminController controller;
+    private View view;
+
 
     @BeforeEach
     public void setUp() {
-        context = new SharedContext(); // fresh context for test
+        //context = new SharedContext(); // fresh context for test
+
+        view = new TextUserInterface();
+        context = new SharedContext(view);
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
-        controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        controller = new AdminController(context, view, new MockEmailService());
     }
 
     @Test
@@ -43,7 +49,7 @@ public class ViewCourseSystemTest extends TUITest {
                 "n"
         );
 
-        SharedContext context = SharedContext.getInstance();
+        //SharedContext context = SharedContext.getInstance();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
         AdminController controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
@@ -73,7 +79,7 @@ public class ViewCourseSystemTest extends TUITest {
                 "3", "2",
                 "n"
         );
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
         AdminController controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
 

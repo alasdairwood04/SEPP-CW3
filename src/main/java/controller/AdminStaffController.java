@@ -4,9 +4,11 @@ import org.tinylog.Logger;
 import external.AuthenticationService;
 import external.EmailService;
 import model.*;
+import util.LogUtil;
 import view.View;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 public class AdminStaffController extends StaffController {
     public AdminStaffController(SharedContext sharedContext, View view, AuthenticationService auth, EmailService email) {
@@ -96,20 +98,26 @@ public class AdminStaffController extends StaffController {
         // get question
         String question = view.getInput("Enter the question for new FAQ item: ");
         if (question.isBlank()) {
-            Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: the question cannot be empty)",
-                    System.currentTimeMillis(),
-                    currentUserEmail,
-                    sectionTopic);
-            view.displayError("The question cannot be empty");
-            return;
+                LogUtil.logAction(
+                        LocalDateTime.now(),
+                        currentUserEmail,
+                        "addFAQItem",
+                        sectionTopic,
+                        "FAILURE (Error: the question cannot be empty)"
+                );
+                view.displayError("The question cannot be empty");
+                return;
         }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
 
         if (answer.isBlank()) {
-            Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: the answer cannot be empty)",
-                    System.currentTimeMillis(),
+            LogUtil.logAction(
+                    LocalDateTime.now(),
                     currentUserEmail,
-                    sectionTopic);
+                    "addFAQItem",
+                    sectionTopic,
+                    "FAILURE (Error: the answer cannot be empty)"
+            );
             view.displayError("The answer cannot be empty");
             return;
         }
@@ -150,10 +158,13 @@ public class AdminStaffController extends StaffController {
 
                 // validate input
                 if (!courseManager.hasCourse(courseTag)) {
-                    Logger.error("{}, {}, addFAQItem, {}, FAILURE (Error: The tag must correspond to a course code)",
-                            System.currentTimeMillis(),
+                    LogUtil.logAction(
+                            LocalDateTime.now(),
                             currentUserEmail,
-                            sectionTopic);
+                            "addFAQItem",
+                            sectionTopic,
+                            "FAILURE (Error: The tag must correspond to a course code)"
+                    );
                     view.displayError("The tag must correspond to a course code");
                     return; // Exit method
                 }
@@ -165,12 +176,19 @@ public class AdminStaffController extends StaffController {
             currentSection.addItem(question, answer);
         }
 
-        Logger.info("{}, {}, addFAQItem, {}, SUCCESS (A new FAQ item was added)",
-                System.currentTimeMillis(),
+        LogUtil.logAction(
+                LocalDateTime.now(),
                 currentUserEmail,
-                sectionTopic);
+                "addFAQItem",
+                sectionTopic,
+                "SUCCESS (A new FAQ item was added)"
+        );
         view.displaySuccess("Created new FAQ item");
+
+
     }
+
+
 
     public void manageInquiries() {
         String[] inquiryTitles = getInquiryTitles(sharedContext.inquiries);

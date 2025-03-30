@@ -2,6 +2,7 @@ package model;
 
 import java.util.*;
 import util.LogUtil;
+import view.View;
 
 import java.time.LocalDateTime;
 
@@ -11,9 +12,13 @@ import java.time.LocalDateTime;
 public class CourseManager {
 
     private final Map<String, Course> courseMap;
+    private View view;
+    private SharedContext sharedContext;
 
-    public CourseManager() {
+
+    public CourseManager(View view) {
         this.courseMap = new HashMap<>();
+        this.view = view;
     }
 
     /**
@@ -94,7 +99,8 @@ public class CourseManager {
 
     public String[] removeCourse(String courseCode) {
         Course removed = courseMap.remove(courseCode);
-        String userEmail = SharedContext.getInstance().currentUser.getEmail();
+        //String userEmail = SharedContext.getInstance().currentUser.getEmail(); // TODO: this is the old way - without the dependancy
+        String userEmail = sharedContext.getCurrentUserEmail(); // new way
 
         if (removed == null) {
             LogUtil.logAction(
@@ -110,7 +116,7 @@ public class CourseManager {
         List<String> emailsToNotify = new ArrayList<>();
         emailsToNotify.add(removed.getCourseOrganiserEmail());
 
-        for (Timetable timetable : SharedContext.getInstance().getAllTimetables()) {
+        for (Timetable timetable : sharedContext.getAllTimetables()) {
             if (timetable.hasSlotsForCourse(courseCode)) {
                 emailsToNotify.add(timetable.getStudentEmail());
                 timetable.removeSlotsForCourse(courseCode);
