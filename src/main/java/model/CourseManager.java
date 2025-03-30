@@ -190,7 +190,8 @@ public class CourseManager {
 
     //TODO: implement
     public boolean hasCourse(String courseTag) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        //return courseMap.containsKey(courseTag);
+        throw new UnsupportedOperationException("hasCourse Not supported yet.");
     }
 
 }

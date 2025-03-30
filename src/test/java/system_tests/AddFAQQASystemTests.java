@@ -118,11 +118,42 @@ public class AddFAQQASystemTests extends TUITest {
         assertOutputContains("Created new FAQ item");
 
         // Verify the FAQ section now has the item with the course tag
-        FAQSection section = context.getFAQManager().getFAQ().getSections().get(0);
+        FAQSection section = context.getFAQManager().getSections().get(0);
         assertEquals(1, section.getItems().size());
         assertEquals("What programming language is used in CSC3001?", section.getItems().get(0).getQuestion());
         assertEquals("Python is the main language used in the course.", section.getItems().get(0).getAnswer());
         assertEquals("CSC3001", section.getItems().get(0).getCourseTag());
+    }
+
+
+    @Test
+    public void testAddFAQItemWithInvalidCourseTag() throws URISyntaxException, IOException, ParseException {
+        // First, add a course to use as tag
+        CourseManager courseManager = context.getCourseManager();
+        courseManager.addCourse(
+                "CSC3001", "Computer Science 101", "Introduction to programming", false,
+                "Dr. Smith", "smith@hindeburg.ac.uk", "Mrs. Jones", "jones@hindeburg.ac.uk",
+                2, 1, "admin1@hindeburg.ac.nz"
+        );
+
+        // Test adding an FAQ item with an invalid course tag
+        setMockInput(
+                "Databases", // new topic
+                "What is SQL?", // question
+                "SQL is a query language for databases.", // answer
+                "y", // yes to course tag
+                "INVALID123" // invalid course code
+        );
+
+        view = new TextUserInterface();
+        controller = new AdminStaffController(context, view,
+                new MockAuthenticationService(), new MockEmailService());
+
+        startOutputCapture();
+        controller.manageFAQ();
+
+        // Should fail with an error message
+        assertOutputContains("The tag must correspond to a course code");
     }
 
     /**
