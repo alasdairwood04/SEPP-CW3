@@ -66,7 +66,7 @@ public class TextUserInterface implements View {
     }
 
     @Override
-    public void displayFAQ(FAQ faq) {
+    public void displayFAQ(FAQManager faq) {
         System.out.println("Frequently Asked Questions");
         displayDivider();
         int i = 0;

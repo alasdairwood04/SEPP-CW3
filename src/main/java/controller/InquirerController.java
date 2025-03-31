@@ -5,9 +5,12 @@ import external.EmailService;
 import model.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
+import org.tinylog.Logger;
+import util.LogUtil;
 import view.View;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -21,32 +24,89 @@ public class InquirerController extends Controller {
 
     public void consultFAQ() {
         FAQSection currentSection = null;
-        String userEmail;
+        String userEmail = null;
+
+        // Set the user email if they're authenticated
         if (sharedContext.currentUser instanceof AuthenticatedUser) {
             userEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
-        } else {
-            userEmail = null;
+        }
+
+        String courseTag = null;
+        if (view.getYesNoInput("Would you like to filter by course code?")) {
+            courseTag = view.getInput("Enter the course code ");
+
+            // validate course code if provided
+            if (courseTag.trim().isEmpty()) {
+                courseTag = null;
+            } else {
+                // verify the course code exists
+                CourseManager courseManager = sharedContext.getCourseManager();
+                if (!courseManager.hasCourse(courseTag)) {
+                    view.displayError("Course with code " + courseTag + " does not exist. Showing all FAQ items");
+                    String actionDetails = "consultFAQ - filter by course - " + courseTag;
+                    LogUtil.logAction(
+                            LocalDateTime.now(),
+                            userEmail != null ? userEmail : "Guest",
+                            "consultFAQ",
+                            actionDetails,
+                            "FAILURE (Error: the question cannot be empty)"
+                    );
+                            courseTag = null;
+                }
+            }
         }
 
         int optionNo = 0;
         while (currentSection != null || optionNo != -1) {
             if (currentSection == null) {
-                view.displayFAQ(sharedContext.getFAQ());
+                // display top-level FAQ sections
+                view.displayFAQ(sharedContext.getFAQManager());
                 view.displayInfo("[-1] Return to main menu");
             } else {
-                view.displayFAQSection(currentSection);
-                view.displayInfo("[-1] Return to " + (currentSection.getParent() == null ? "FAQ" : currentSection.getParent().getTopic()));
+                view.displayInfo(currentSection.getTopic() + (courseTag != null ? " (Filtered by  " + courseTag  + ")" : ""));
+                view.displayDivider();
 
-                if (userEmail == null) {
-                    view.displayInfo("[-2] Request updates for this topic");
-                    view.displayInfo("[-3] Stop receiving updates for this topic");
+                // Find items matching course tag if filtering is active
+                List<FAQItem> relevantItems = new ArrayList<>();
+                if (courseTag != null) {
+                    for (FAQItem item : currentSection.getItems()) {
+                        if (item.hasTag(courseTag)) {
+                            relevantItems.add(item);
+                        }
+                    }
                 } else {
-                    if (sharedContext.usersSubscribedToFAQTopic(currentSection.getTopic()).contains(userEmail)) {
-                        view.displayInfo("[-2] Stop receiving updates for this topic");
-                    } else {
-                        view.displayInfo("[-2] Request updates for this topic");
+                    // if no tag, it will just display all (no filter)
+                    relevantItems.addAll(currentSection.getItems());
+                }
+
+                // Display items or notification if no matches
+                if (!relevantItems.isEmpty()) {
+                    for (FAQItem item : relevantItems) {
+                        view.displayInfo(item.getId() + " " + item.getQuestion());
+                        view.displayInfo("> " + item.getAnswer());
+
+                        // only show course tag if not filterning and the item has a tag
+                        if (courseTag == null && item.getCourseTag() != null && !item.getCourseTag().isEmpty()) {
+                            view.displayInfo("> " + item.getCourseTag());
+                        }
+                        view.displayDivider();
+                    }
+                } else if (courseTag != null) {
+                    view.displayInfo("There are no questions for course '" + courseTag + "' in this topic.");
+                    view.displayInfo("You can navigate to other topics to find relevant questions.");
+                }
+
+                if (!currentSection.getSubsections().isEmpty()) {
+                    view.displayInfo("Subsections:");
+                    int i = 0;
+                    for (FAQSection subsection : currentSection.getSubsections()) {
+                        view.displayInfo("[" + i++ + "] " + subsection.getTopic());
+
                     }
                 }
+
+                view.displayInfo("[-1] Return to " + (currentSection.getParent() == null ? "FAQ" : currentSection.getParent().getTopic()));
+
             }
 
             String input = view.getInput("Please choose an option: ");
@@ -54,65 +114,37 @@ public class InquirerController extends Controller {
             try {
                 optionNo = Integer.parseInt(input);
 
-                if (optionNo != -1 && optionNo != -2 && optionNo != -3) {
+                if (optionNo != -1) {
                     try {
                         if (currentSection == null) {
-                            currentSection = sharedContext.getFAQ().getSections().get(optionNo);
+                            currentSection = sharedContext.getFAQManager().getSections().get(optionNo);
                         } else {
                             currentSection = currentSection.getSubsections().get(optionNo);
                         }
                     } catch (IndexOutOfBoundsException e) {
                         view.displayError("Invalid option: " + optionNo);
                     }
+                } else if (currentSection != null) {
+                    currentSection = currentSection.getParent();
+                    optionNo = 0;
                 }
 
-                if (currentSection != null) {
-                    String topic = currentSection.getTopic();
-
-                    if (userEmail == null && optionNo == -2) {
-                        requestFAQUpdates(null, topic);
-                    } else if (userEmail == null && optionNo == -3) {
-                        stopFAQUpdates(null, topic);
-                    } else if (optionNo == -2) {
-                        if (sharedContext.usersSubscribedToFAQTopic(topic).contains(userEmail)) {
-                            stopFAQUpdates(userEmail, topic);
-                        } else {
-                            requestFAQUpdates(userEmail, topic);
-                        }
-                    } else if (optionNo == -1) {
-                        currentSection = currentSection.getParent();
-                        optionNo = 0;
-                    }
-                }
             } catch (NumberFormatException e) {
                 view.displayError("Invalid option: " + input);
             }
         }
+
+        // Log successful completion using LogUtil instead of direct TinyLog call
+        String inputDetails = courseTag != null ? "courseTag=" + courseTag : "-";
+        LogUtil.logAction(
+                LocalDateTime.now(),
+                userEmail,
+                "consultFAQ",
+                inputDetails,
+                "SUCCESS"
+        );
     }
 
-    private void requestFAQUpdates(String userEmail, String topic) {
-        if (userEmail == null) {
-            userEmail = view.getInput("Please enter your email address: ");
-        }
-        boolean success = sharedContext.registerForFAQUpdates(userEmail, topic);
-        if (success) {
-            view.displaySuccess("Successfully registered " + userEmail + " for updates on '" + topic + "'");
-        } else {
-            view.displayError("Failed to register " + userEmail + " for updates on '" + topic + "'. Perhaps this email was already registered?");
-        }
-    }
-
-    private void stopFAQUpdates(String userEmail, String topic) {
-        if (userEmail == null) {
-            userEmail = view.getInput("Please enter your email address: ");
-        }
-        boolean success = sharedContext.unregisterForFAQUpdates(userEmail, topic);
-        if (success) {
-            view.displaySuccess("Successfully unregistered " + userEmail + " for updates on '" + topic + "'");
-        } else {
-            view.displayError("Failed to unregister " + userEmail + " for updates on '" + topic + "'. Perhaps this email was not registered?");
-        }
-    }
 
     public void contactStaff() {
         String inquirerEmail;

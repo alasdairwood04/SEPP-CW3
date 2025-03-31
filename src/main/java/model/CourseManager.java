@@ -2,6 +2,7 @@ package model;
 
 import java.util.*;
 import util.LogUtil;
+import view.View;
 
 import java.time.LocalDateTime;
 
@@ -11,9 +12,14 @@ import java.time.LocalDateTime;
 public class CourseManager {
 
     private final Map<String, Course> courseMap;
+    private View view;
+    private SharedContext sharedContext;
 
-    public CourseManager() {
+
+    public CourseManager(View view, SharedContext sharedContext) {
         this.courseMap = new HashMap<>();
+        this.view = view;
+        this.sharedContext = sharedContext;
     }
 
     /**
@@ -91,9 +97,11 @@ public class CourseManager {
      *
      * @return list of email addresses to notify or null if course not found.
      */
+
     public String[] removeCourse(String courseCode) {
         Course removed = courseMap.remove(courseCode);
-        String userEmail = SharedContext.getInstance().currentUser.getEmail();
+        //String userEmail = SharedContext.getInstance().currentUser.getEmail(); // TODO: this is the old way - without the dependancy
+        String userEmail = sharedContext.getCurrentUserEmail();
 
         if (removed == null) {
             LogUtil.logAction(
@@ -109,7 +117,7 @@ public class CourseManager {
         List<String> emailsToNotify = new ArrayList<>();
         emailsToNotify.add(removed.getCourseOrganiserEmail());
 
-        for (Timetable timetable : SharedContext.getInstance().getAllTimetables()) {
+        for (Timetable timetable : sharedContext.getAllTimetables()) {
             if (timetable.hasSlotsForCourse(courseCode)) {
                 emailsToNotify.add(timetable.getStudentEmail());
                 timetable.removeSlotsForCourse(courseCode);
@@ -175,4 +183,16 @@ public class CourseManager {
     public Collection<Course> getAllCourses() {
         return courseMap.values();
     }
+
+    // TODO: implent
+    public CourseManager getCourseManager() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    //TODO: implement
+    public boolean hasCourse(String courseTag) {
+        return courseMap.containsKey(courseTag);
+        //throw new UnsupportedOperationException("hasCourse Not supported yet.");
+    }
+
 }

@@ -1,6 +1,7 @@
 package system_tests;
 
 import controller.AdminController;
+import controller.AdminStaffController;
 import controller.GuestController;
 import external.MockAuthenticationService;
 import external.MockEmailService;
@@ -10,6 +11,7 @@ import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import view.TextUserInterface;
+import view.View;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -20,20 +22,36 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 public class AddCourseSystemTest extends TUITest {
 
     private SharedContext context;
-    private AdminController controller;
+    private AdminStaffController controller;
+    private View view;
+    private MockAuthenticationService authService;
+    private MockEmailService emailService;
 
     @BeforeEach
     public void setUp() throws Exception {
-        context = SharedContext.getInstance();
-        loginAsAdminStaff(context);
+        //context = SharedContext.getInstance();
+        //loginAsAdminStaff(context);
+        //controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        // Create a new SharedContext with a view
+        view = new TextUserInterface();
+        context = new SharedContext(new TextUserInterface());
+        authService = new MockAuthenticationService();
+        emailService = new MockEmailService();
 
-        controller = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        // Set up admin user
+        context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
+
+        // Create controller with all required parameters
+        // Fix this line:
+        controller = new AdminStaffController(context, view,
+                new MockAuthenticationService(), new MockEmailService());
+
     }
 
     @Test
     public void testLoginAsAdminStaff() throws URISyntaxException, IOException, ParseException {
         setMockInput("admin1", "admin1pass");
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         GuestController guestController = new GuestController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
         startOutputCapture();
         guestController.login();
@@ -43,7 +61,7 @@ public class AddCourseSystemTest extends TUITest {
     }
 
     @Test
-    public void testAddCourse() {
+    public void testAddCourse() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "CSC3001", "Advanced Systems", "Design", "y",
                 "Dr. A", "a@hindeburg.ac.nz",
@@ -52,10 +70,10 @@ public class AddCourseSystemTest extends TUITest {
                 "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
-        AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        AdminStaffController admin = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
         admin.addCourse();
@@ -65,7 +83,7 @@ public class AddCourseSystemTest extends TUITest {
     }
 
     @Test
-    public void testAddCourseWithActivity() {
+    public void testAddCourseWithActivity() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "CSC3333", "Embedded Systems", "Low-level", "y",
                 "Dr. Z", "z@hindeburg.ac.nz",
@@ -75,10 +93,10 @@ public class AddCourseSystemTest extends TUITest {
                 "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
-        AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        AdminStaffController admin = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
         admin.addCourse();
@@ -88,7 +106,7 @@ public class AddCourseSystemTest extends TUITest {
     }
 
     @Test
-    public void testEmptyCourseCode() {
+    public void testEmptyCourseCode() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "", "Advanced Systems", "Design", "y",
                 "Dr. A", "a@hindeburg.ac.nz",
@@ -96,10 +114,10 @@ public class AddCourseSystemTest extends TUITest {
                 "3", "2", "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
 
-        AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        AdminStaffController admin = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
         admin.addCourse();
@@ -108,7 +126,7 @@ public class AddCourseSystemTest extends TUITest {
     }
 
     @Test
-    public void testDuplicateCourseCode() {
+    public void testDuplicateCourseCode() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "CSC3001", "Advanced Systems", "Design", "y",
                 "Dr. A", "a@hindeburg.ac.nz",
@@ -116,9 +134,9 @@ public class AddCourseSystemTest extends TUITest {
                 "3", "2", "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
-        AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        AdminStaffController admin = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
         admin.addCourse();
@@ -133,7 +151,7 @@ public class AddCourseSystemTest extends TUITest {
         );
 
 
-        AdminController admin2 = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        AdminStaffController admin2 = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
         admin2.addCourse();
@@ -142,7 +160,7 @@ public class AddCourseSystemTest extends TUITest {
 
 
     @Test
-    public void testInvalidCourseCodeFormat() {
+    public void testInvalidCourseCodeFormat() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "123-INVALID", "Something", "Description", "n",
                 "Dr. X", "x@hindeburg.ac.nz",
@@ -150,9 +168,9 @@ public class AddCourseSystemTest extends TUITest {
                 "1", "1", "n"
         );
 
-        SharedContext context = new SharedContext();
+        //SharedContext context = new SharedContext();
         context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
-        AdminController admin = new AdminController(context, new TextUserInterface(), new MockEmailService());
+        AdminStaffController admin = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
         admin.addCourse();

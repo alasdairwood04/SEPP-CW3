@@ -1,64 +1,47 @@
 package model;
 
 import java.util.*;
+import view.View;
 
 public class SharedContext {
     public static final String ADMIN_STAFF_EMAIL = "inquiries@hindeburg.ac.nz";
 
-    private static final SharedContext instance = new SharedContext();
 
-    public static SharedContext getInstance() {
-        return instance;
-    }
-
+    private View view;
     public User currentUser;
-
     public final List<Inquiry> inquiries;
-    public final FAQ faq;
-    private final Map<String, Set<String>> faqTopicsUpdateSubscribers;
-
-
-    // TODO: Store each student's timetable, keyed by their email
-    private final Map<String, Timetable> studentTimetables;
-    // TODO
+    private final FAQManager faqManager;
+    private final Map<String, Timetable> studentTimetables; // TODO: Store each student's timetable, keyed by their email
     private final CourseManager courseManager;
 
-    public SharedContext() {
+    public SharedContext(View view) {
         this.currentUser = new Guest();
         this.inquiries = new ArrayList<>();
-        faq = new FAQ();
-        faqTopicsUpdateSubscribers = new HashMap<>();
+        this.view = view;
+        this.faqManager = new FAQManager(view);
         this.studentTimetables = new HashMap<>(); // TODO: initialize timetable storage
-        this.courseManager = new CourseManager(); //TODO : initialize course manager
+        //this.courseManager = new CourseManager(view); //TODO : initialize course manager
+        // Pass 'this' (SharedContext) to CourseManager
+        this.courseManager = new CourseManager(view, this);
+
     }
 
     public FAQ getFAQ() {
-        return faq;
-    }
-
-    public boolean registerForFAQUpdates(String email, String topic) {
-        if (faqTopicsUpdateSubscribers.containsKey(topic)) {
-            return faqTopicsUpdateSubscribers.get(topic).add(email);
-        } else {
-            Set<String> subscribers = new HashSet<>();
-            subscribers.add(email);
-            faqTopicsUpdateSubscribers.put(topic, subscribers);
-            return true;
-        }
-    }
-
-    public boolean unregisterForFAQUpdates(String email, String topic) {
-        return faqTopicsUpdateSubscribers.getOrDefault(topic, new HashSet<>()).remove(email);
-    }
-
-    public Set<String> usersSubscribedToFAQTopic(String topic) {
-        return faqTopicsUpdateSubscribers.getOrDefault(topic, new HashSet<>());
+        return faqManager.getFAQ();
     }
 
     //TODO : Add a method to get the course manager
 
+    public FAQManager getFAQManager() {
+        return this.faqManager;
+    }
+
     public CourseManager getCourseManager() {
         return this.courseManager;
+    }
+
+    public View getView() {
+        return this.view;
     }
 
     // TODO: Get the student's timetable by email. If not present, create a new one.
@@ -79,5 +62,12 @@ public class SharedContext {
     //TODO:  Add a method to get the current user's email
     public String getCurrentUserEmail() {
         return currentUser != null ? currentUser.getEmail() : "unknown@hindeburg.ac.nz";
+    }
+
+    public String getCurrentUserRole() {
+        if (currentUser instanceof AuthenticatedUser) {
+            return ((AuthenticatedUser) currentUser).getRole();
+        }
+        return "";
     }
 }

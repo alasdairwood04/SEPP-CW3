@@ -1,15 +1,33 @@
 package controller;
 
+import external.MockAuthenticationService;
+import external.MockEmailService;
+import org.json.simple.parser.ParseException;
+import org.tinylog.Logger;
 import external.AuthenticationService;
 import external.EmailService;
 import model.*;
+import util.LogUtil;
+import view.TextUserInterface;
 import view.View;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AdminStaffController extends StaffController {
+    private final CourseManager courseManager;
+
     public AdminStaffController(SharedContext sharedContext, View view, AuthenticationService auth, EmailService email) {
         super(sharedContext, view, auth, email);
+
+        this.courseManager = sharedContext.getCourseManager();
     }
 
     public void manageFAQ() {
@@ -17,13 +35,15 @@ public class AdminStaffController extends StaffController {
 
         while (true) {
             if (currentSection == null) {
-                view.displayFAQ(sharedContext.getFAQ());
+                view.displayFAQ(sharedContext.getFAQManager());
                 view.displayInfo("[-1] Return to main menu");
             } else {
                 view.displayFAQSection(currentSection);
                 view.displayInfo("[-1] Return to " + (currentSection.getParent() == null ? "FAQ" : currentSection.getParent().getTopic()));
             }
             view.displayInfo("[-2] Add FAQ item");
+
+            // User Input
             String input = view.getInput("Please choose an option: ");
             try {
                 int optionNo = Integer.parseInt(input);
@@ -39,7 +59,7 @@ public class AdminStaffController extends StaffController {
                 } else {
                     try {
                         if (currentSection == null) {
-                            currentSection = sharedContext.getFAQ().getSections().get(optionNo);
+                            currentSection = sharedContext.getFAQManager().getSections().get(optionNo);
                         } else {
                             currentSection = currentSection.getSubsections().get(optionNo);
                         }
@@ -63,12 +83,21 @@ public class AdminStaffController extends StaffController {
         if (createSection) {
             String newTopic = view.getInput("Enter new topic title: ");
             FAQSection newSection = new FAQSection(newTopic);
+
             if (currentSection == null) {
-                if (sharedContext.getFAQ().getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
+                if (sharedContext.getFAQManager().getSections().stream().anyMatch(section -> section.getTopic().equals(newTopic))) {
                     view.displayWarning("Topic '" + newTopic + "' already exists!");
-                    newSection = sharedContext.getFAQ().getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
+                    newSection = sharedContext.getFAQManager().getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
                 } else {
-                    sharedContext.getFAQ().addSection(newSection);
+                    sharedContext.getFAQManager().addSection(newTopic);
+
+                    // Find the section that was just added to the FAQ manager
+                    // This ensures we're working with the actual section object in the FAQ structure
+                    // rather than a disconnected local object that isn't part of the persistent hierarchy
+                    newSection = sharedContext.getFAQManager().getSections().stream()
+                            .filter(section -> section.getTopic().equals(newTopic))
+                            .findFirst()
+                            .orElseThrow();
                     view.displayInfo("Created topic '" + newTopic + "'");
                 }
             } else {
@@ -83,39 +112,107 @@ public class AdminStaffController extends StaffController {
             currentSection = newSection;
         }
 
+        // Display header for clarity
+        view.displayInfo("=== Add New FAQ Question-Answer Pair===");
+
+
+        // Get current user's email for logging
+        String currentUserEmail = ((AuthenticatedUser) sharedContext.currentUser).getEmail();
+        String sectionTopic = currentSection.getTopic();
+
+        // get question
         String question = view.getInput("Enter the question for new FAQ item: ");
+        if (question.isBlank()) {
+                LogUtil.logAction(
+                        LocalDateTime.now(),
+                        currentUserEmail,
+                        "addFAQItem",
+                        sectionTopic,
+                        "FAILURE (Error: the question cannot be empty)"
+                );
+                view.displayError("The question cannot be empty");
+                return;
+        }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
-        currentSection.getItems().add(new FAQItem(question, answer));
 
-        String emailSubject = "FAQ topic '" + currentSection.getTopic() + "' updated";
-        StringBuilder emailContentBuilder = new StringBuilder();
-        emailContentBuilder.append("Updated Q&As:");
-        for (FAQItem item : currentSection.getItems()) {
-            emailContentBuilder.append("\n\n");
-            emailContentBuilder.append("Q: ");
-            emailContentBuilder.append(item.getQuestion());
-            emailContentBuilder.append("\n");
-            emailContentBuilder.append("A: ");
-            emailContentBuilder.append(item.getAnswer());
-        }
-        String emailContent = emailContentBuilder.toString();
-
-        email.sendEmail(
-                ((AuthenticatedUser) sharedContext.currentUser).getEmail(),
-                SharedContext.ADMIN_STAFF_EMAIL,
-                emailSubject,
-                emailContent
-        );
-        for (String subscriberEmail : sharedContext.usersSubscribedToFAQTopic(currentSection.getTopic())) {
-            email.sendEmail(
-                    SharedContext.ADMIN_STAFF_EMAIL,
-                    subscriberEmail,
-                    emailSubject,
-                    emailContent
+        if (answer.isBlank()) {
+            LogUtil.logAction(
+                    LocalDateTime.now(),
+                    currentUserEmail,
+                    "addFAQItem",
+                    sectionTopic,
+                    "FAILURE (Error: the answer cannot be empty)"
             );
+            view.displayError("The answer cannot be empty");
+            return;
         }
+
+        boolean addTag = view.getYesNoInput("Would you like to add a course tags");
+
+        FAQItem newItem;
+
+        // TODO have to wait to implement this - need methods getCourseManager(), viewCourses() etc to do this part of the addFAQ part
+        if (addTag) {
+
+            // Get course manager from shared context
+            CourseManager courseManager = sharedContext.getCourseManager();
+
+            // Get course list
+            String fullCourseDetailsAsString  = courseManager.viewCourses();
+
+            // check if there is any courses
+            if (fullCourseDetailsAsString.equals("No courses available.")) {
+                view.displayInfo("No courses available in the system");
+                // add without tag
+                currentSection.addItem(question, answer);
+            } else {
+                view.displayInfo("Available courses:");
+
+                String[] courseLines = fullCourseDetailsAsString.split("\n");
+                for (String line : courseLines) {
+                    if (!line.isEmpty()) {
+                        String[] parts = line.split(" - ", 2);
+                        if (parts.length >= 2) {
+                            String courseCode = parts[0].trim();
+                            String courseName = parts[1].trim();
+                            view.displayInfo(courseCode + " : " + courseName);
+                        }
+                    }
+                }
+                // get course code input
+                String courseTag = view.getInput("Enter course code to add as tag:");
+
+                // validate input
+                if (!courseManager.hasCourse(courseTag)) {
+                    LogUtil.logAction(
+                            LocalDateTime.now(),
+                            currentUserEmail,
+                            "addFAQItem",
+                            sectionTopic,
+                            "FAILURE (Error: The tag must correspond to a course code)"
+                    );
+                    view.displayError("The tag must correspond to a course code");
+                    return; // Exit method
+                }
+                // add with tag
+                currentSection.addItem(question, answer, courseTag);
+            }
+        } else {
+            // add without tag
+            currentSection.addItem(question, answer);
+        }
+
+        LogUtil.logAction(
+                LocalDateTime.now(),
+                currentUserEmail,
+                "addFAQItem",
+                sectionTopic,
+                "SUCCESS (A new FAQ item was added)"
+        );
         view.displaySuccess("Created new FAQ item");
     }
+
+
 
     public void manageInquiries() {
         String[] inquiryTitles = getInquiryTitles(sharedContext.inquiries);
@@ -157,5 +254,154 @@ public class AdminStaffController extends StaffController {
                 "Subject: " + inquiry.getSubject() + "\nPlease log into the Self Service Portal to review and respond to the inquiry."
         );
         view.displaySuccess("Inquiry has been reassigned");
+    }
+
+    /**
+     * Add a new course to the system.
+     */
+
+    public void addCourse() {
+        view.displayInfo("=== Add Course ===");
+
+        // --- Step 1: Get course info ---
+        String courseCode = view.getInput("Enter course code: ");
+        String name = view.getInput("Enter course name: ");
+        String description = view.getInput("Enter description: ");
+        boolean requiresComputers = view.getYesNoInput("Requires computers? (y/n): ");
+
+        String organiserName = view.getInput("Enter organiser name: ");
+        String organiserEmail = view.getInput("Enter organiser email: ");
+        String secretaryName = view.getInput("Enter secretary name: ");
+        String secretaryEmail = view.getInput("Enter secretary email: ");
+
+        int requiredTutorials = view.getIntegerInput("Enter number of required tutorials: ");
+        int requiredLabs = view.getIntegerInput("Enter number of required labs: ");
+
+        String addedBy = sharedContext.getCurrentUserEmail();
+
+        // --- Step 2: Try to add the course ---
+        AddCourseResult result = courseManager.addCourse(
+                courseCode, name, description, requiresComputers,
+                organiserName, organiserEmail,
+                secretaryName, secretaryEmail,
+                requiredTutorials, requiredLabs,
+                addedBy
+        );
+
+        if (!result.success) {
+            view.displayError(result.message);
+            return;
+        }
+
+        // --- Step 3: Course created, now collect activities ---
+        view.displayInfo("=== Add Course - Activities ===");
+
+        Course course = courseManager.getCourse(courseCode); // get created course
+        while (true) {
+            boolean addMore = view.getYesNoInput("Do you want to add an activity to this course? (y/n): ");
+            if (!addMore) break;
+
+            try {
+                int id = Integer.parseInt(view.getInput("Enter activity ID (as integer): "));
+                LocalTime startTime = LocalTime.parse(view.getInput("Enter start time (e.g., 09:00): "));
+                LocalTime endTime = LocalTime.parse(view.getInput("Enter end time (e.g., 10:00): "));
+                LocalDate startDate = LocalDate.parse(view.getInput("Enter start date (e.g., 2025-03-26): "));
+                LocalDate endDate = LocalDate.parse(view.getInput("Enter end date (e.g., 2025-04-30): "));
+                String location = view.getInput("Enter location: ");
+                DayOfWeek day = DayOfWeek.valueOf(view.getInput("Enter day of week (e.g., MONDAY): ").toUpperCase());
+
+                Activity activity = new ConcreteActivity(id, startDate, startTime, endDate, endTime, location, day);
+                course.addActivity(activity);
+
+            } catch (Exception e) {
+                view.displayError("Invalid activity input. Please try again.");
+            }
+        }
+
+        // --- Step 4: Final success message, log, and email ---
+        LogUtil.logAction(
+                LocalDateTime.now(), addedBy, "addCourse", courseCode,
+                "SUCCESS (New course added)"
+        );
+
+        view.displaySuccess("Course has been successfully created.");
+
+        int status = email.sendEmail(
+                "noreply@hindeburg.ac.nz",
+                organiserEmail,
+                "Course Created - " + courseCode,
+                "A course has been provided with the following details:\n\n" + course.toString()
+        );
+
+        if (status == EmailService.STATUS_SUCCESS) {
+            view.displaySuccess("Confirmation email sent to course organiser.");
+        } else {
+            view.displayWarning("Failed to send confirmation email. Status code: " + status);
+        }
+    }
+
+    /**
+     * View all courses in the system.
+     */
+
+    public void viewCourses() {
+        Collection<Course> allCourses = courseManager.getAllCourses();
+
+        if (allCourses.isEmpty()) {
+            view.displayInfo("No courses found.");
+            return;
+        }
+
+        view.displayInfo("=== All Courses ===");
+
+        for (Course course : allCourses) {
+            view.displayInfo("Course Code: " + course.getCourseCode());
+            view.displayInfo("Name: " + course.getName());
+            view.displayInfo("Description: " + course.getDescription());
+            view.displayInfo("Requires Computers: " + course.requiresComputers());
+            view.displayInfo("Organiser: " + course.getCourseOrganiserName() + " <" + course.getCourseOrganiserEmail() + ">");
+            view.displayInfo("Secretary: " + course.getCourseSecretaryName() + " <" + course.getCourseSecretaryEmail() + ">");
+            view.displayInfo("Tutorials Required: " + course.getRequiredTutorials());
+            view.displayInfo("Labs Required: " + course.getRequiredLabs());
+            view.displayDivider();
+        }
+    }
+
+    /**
+     * Delete a course from the system.
+     */
+
+    public void removeCourse() {
+        view.displayInfo("=== Delete Course ===");
+
+        String courseCode = view.getInput("Enter course code to delete: ");
+        String currentUserEmail = sharedContext.getCurrentUserEmail();
+
+        String[] emailsToNotify = courseManager.removeCourse(courseCode);
+
+        if (emailsToNotify == null) {
+            view.displayError("Course not found: " + courseCode);
+            return;
+        }
+
+        // Log
+        LogUtil.logAction(
+                LocalDateTime.now(),
+                currentUserEmail,
+                "removeCourse",
+                courseCode,
+                "SUCCESS"
+        );
+
+        view.displaySuccess("Course " + courseCode + " removed successfully.");
+
+        for (String emailAddress : emailsToNotify) {
+            email.sendEmail(  // Changed from emailService to email
+                    "noreply@hindeburg.ac.nz",
+                    emailAddress,
+                    "Course Removed - " + courseCode,
+                    "Please be informed that course " + courseCode + " has been removed."
+            );
+        }
     }
 }
