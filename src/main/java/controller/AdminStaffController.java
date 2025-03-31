@@ -1,18 +1,25 @@
 package controller;
 
+import external.MockAuthenticationService;
+import external.MockEmailService;
+import org.json.simple.parser.ParseException;
 import org.tinylog.Logger;
 import external.AuthenticationService;
 import external.EmailService;
 import model.*;
 import util.LogUtil;
+import view.TextUserInterface;
 import view.View;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AdminStaffController extends StaffController {
     private final CourseManager courseManager;
@@ -35,6 +42,8 @@ public class AdminStaffController extends StaffController {
                 view.displayInfo("[-1] Return to " + (currentSection.getParent() == null ? "FAQ" : currentSection.getParent().getTopic()));
             }
             view.displayInfo("[-2] Add FAQ item");
+
+            // User Input
             String input = view.getInput("Please choose an option: ");
             try {
                 int optionNo = Integer.parseInt(input);
@@ -81,6 +90,14 @@ public class AdminStaffController extends StaffController {
                     newSection = sharedContext.getFAQManager().getSections().stream().filter(section -> section.getTopic().equals(newTopic)).findFirst().orElseThrow();
                 } else {
                     sharedContext.getFAQManager().addSection(newTopic);
+
+                    // Find the section that was just added to the FAQ manager
+                    // This ensures we're working with the actual section object in the FAQ structure
+                    // rather than a disconnected local object that isn't part of the persistent hierarchy
+                    newSection = sharedContext.getFAQManager().getSections().stream()
+                            .filter(section -> section.getTopic().equals(newTopic))
+                            .findFirst()
+                            .orElseThrow();
                     view.displayInfo("Created topic '" + newTopic + "'");
                 }
             } else {

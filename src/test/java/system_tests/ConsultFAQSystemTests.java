@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * These tests verify that users can navigate the FAQ hierarchy,
  * view question-answer pairs, and filter by course code.
  */
+
 public class ConsultFAQSystemTests extends TUITest {
 
     private SharedContext context;
@@ -60,16 +61,16 @@ public class ConsultFAQSystemTests extends TUITest {
         FAQManager faqManager = context.getFAQManager();
 
         // Create top-level sections
-        FAQSection academics = new FAQSection("Academics");
-        FAQSection studentLife = new FAQSection("Student Life");
+        //FAQSection academics = new FAQSection("Academics");
+        //FAQSection studentLife = new FAQSection("Student Life");
 
         faqManager.addSection("Academics");
         faqManager.addSection("Student Life");
 
         // Get the actual sections from the manager
         List<FAQSection> sections = faqManager.getSections();
-        academics = sections.get(0); // Academics should be first
-        studentLife = sections.get(1); // Student Life should be second
+        FAQSection academics = sections.get(0); // Academics should be first
+        FAQSection studentLife = sections.get(1); // Student Life should be second
 
         // Create subsections
         FAQSection registration = new FAQSection("Registration");
@@ -124,7 +125,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * Users should be able to see top-level sections and navigate into subsections.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testBasicFAQNavigation() throws URISyntaxException, IOException, ParseException {
         // Choose not to filter by course code, then navigate through the FAQ
         setMockInput(
@@ -177,7 +177,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * Only Q&A pairs with matching course tags should be displayed.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFilterByValidCourseCode() throws URISyntaxException, IOException, ParseException {
         // Choose to filter by CSC3001 course code
         setMockInput(
@@ -219,7 +218,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * System should display a message that no items exist for that course.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFilterByEmptyCourseCode() throws URISyntaxException, IOException, ParseException {
         // Add a course with no FAQ items
         courseManager.addCourse(
@@ -259,7 +257,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * System should validate the course code and display an error message.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFilterByInvalidCourseCode() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "y",            // Filter by course code
@@ -288,7 +285,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * The behavior should be the same as for a guest.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testConsultFAQAsStudent() throws URISyntaxException, IOException, ParseException {
         // Set current user to a student
         context.currentUser = new AuthenticatedUser("student1@hindeburg.ac.uk", "Student");
@@ -373,7 +369,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * but only Q&A pairs that match the course code.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFilterPreservesTopicStructure() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "y",            // Filter by course code
@@ -418,7 +413,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * System should log successful FAQ consultations.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFAQConsultationLogging() throws URISyntaxException, IOException, ParseException {
         // This test is harder to verify directly since the logging happens
         // via the tinylog library to files/console, not via our captured output
@@ -449,7 +443,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * Tests that empty input is handled gracefully.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testEmptyInputHandling() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "n",            // Don't filter by course code

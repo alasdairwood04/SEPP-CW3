@@ -6,9 +6,11 @@ import model.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.highlight.InvalidTokenOffsetsException;
 import org.tinylog.Logger;
+import util.LogUtil;
 import view.View;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +33,7 @@ public class InquirerController extends Controller {
 
         String courseTag = null;
         if (view.getYesNoInput("Would you like to filter by course code?")) {
-            courseTag = view.getInput("Enter the course code");
+            courseTag = view.getInput("Enter the course code ");
 
             // validate course code if provided
             if (courseTag.trim().isEmpty()) {
@@ -42,9 +44,14 @@ public class InquirerController extends Controller {
                 if (!courseManager.hasCourse(courseTag)) {
                     view.displayError("Course with code " + courseTag + " does not exist. Showing all FAQ items");
                     String actionDetails = "consultFAQ - filter by course - " + courseTag;
-                    org.tinylog.Logger.error("User: {} - Action: consultFAQ - Input: {} - Status: FAILURE (Error: The tag must correspond to a course code)",
-                            userEmail != null ? userEmail : "Guest", courseTag);
-                    courseTag = null;
+                    LogUtil.logAction(
+                            LocalDateTime.now(),
+                            userEmail != null ? userEmail : "Guest",
+                            "consultFAQ",
+                            actionDetails,
+                            "FAILURE (Error: the question cannot be empty)"
+                    );
+                            courseTag = null;
                 }
             }
         }
@@ -127,10 +134,15 @@ public class InquirerController extends Controller {
             }
         }
 
-        // Log successful completion
-        org.tinylog.Logger.info("User: {} - Action: consultFAQ - Input: {} - Status: SUCCESS",
-                userEmail != null ? userEmail : "Guest",
-                courseTag != null ? "courseTag=" + courseTag : "-");
+        // Log successful completion using LogUtil instead of direct TinyLog call
+        String inputDetails = courseTag != null ? "courseTag=" + courseTag : "-";
+        LogUtil.logAction(
+                LocalDateTime.now(),
+                userEmail,
+                "consultFAQ",
+                inputDetails,
+                "SUCCESS"
+        );
     }
 
 

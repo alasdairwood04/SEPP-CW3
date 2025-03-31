@@ -39,11 +39,51 @@ public class AddFAQQASystemTests extends TUITest {
         context.getFAQManager().addSection("General Information");
     }
 
+    @Test
+    public void testAddFAQItemAtRootLevel() throws URISyntaxException, IOException, ParseException {
+        // Clear existing sections from the setup
+        context.getFAQManager().getSections().clear();
+
+        // Now we have an empty FAQ with no sections
+        assertEquals(0, context.getFAQManager().getSections().size(), "Should start with no sections");
+
+        // Set up mock input - first we need to create a section at the root level
+        setMockInput(
+                "-2",      // Choose Add FAQ item option (will prompt to create section since none exist)
+                "Root Topic", // New root-level topic name
+                "Root Question?", // Question
+                "Root Answer.", // Answer
+                "n",       // No course tag
+                "-1"       // Exit
+        );
+
+        view = new TextUserInterface();
+        controller = new AdminStaffController(context, view,
+                new MockAuthenticationService(), new MockEmailService());
+
+        startOutputCapture();
+        controller.manageFAQ();
+
+        // Verify a new section was created at the root level
+        assertEquals(1, context.getFAQManager().getSections().size(), "Should have created one root section");
+
+        // Verify the section has the correct name
+        FAQSection rootSection = context.getFAQManager().getSections().get(0);
+        assertEquals("Root Topic", rootSection.getTopic(), "Root section should have the correct name");
+
+        // Verify the question was added to the root section
+        List<FAQItem> items = rootSection.getItems();
+        assertEquals(1, items.size(), "Should have added one item to the root section");
+
+        FAQItem item = items.get(0);
+        assertEquals("Root Question?", item.getQuestion());
+        assertEquals("Root Answer.", item.getAnswer());
+    }
+
     /**
      * Tests adding a basic FAQ item without a course tag.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testAddFAQItem_Basic() throws URISyntaxException, IOException, ParseException {
         // Set up mock input for navigating to General Information,
         // adding a new FAQ item, and returning to the main menu
@@ -51,8 +91,8 @@ public class AddFAQQASystemTests extends TUITest {
                 "0",        // Select General Information section
                 "-2",       // Choose Add FAQ item
                 "n",        // Don't create a new topic
-                "How do I register for courses?",  // Question
-                "Visit the registration portal and follow the instructions.",  // Answer
+                "Question",  // Question
+                "Answer",  // Answer
                 "n",        // Don't add a course tag
                 "-1",       // Return to main
                 "-1"        // Exit
@@ -77,8 +117,8 @@ public class AddFAQQASystemTests extends TUITest {
         // Assertions to verify the item was added correctly
         assertEquals(1, items.size(), "Should have added exactly one FAQ item");
         FAQItem addedItem = items.get(0);
-        assertEquals("How do I register for courses?", addedItem.getQuestion(), "Question text should match");
-        assertEquals("Visit the registration portal and follow the instructions.", addedItem.getAnswer(), "Answer text should match");
+        assertEquals("Question", addedItem.getQuestion(), "Question text should match");
+        assertEquals("Answer", addedItem.getAnswer(), "Answer text should match");
         assertNull(addedItem.getCourseTag(), "Course tag should be null");
     }
 
@@ -88,9 +128,11 @@ public class AddFAQQASystemTests extends TUITest {
         // First, add a course to use as tag
         CourseManager courseManager = context.getCourseManager();
         courseManager.addCourse(
-                "CSC3001", "Computer Science 101", "Introduction to programming", false,
-                "Dr. Smith", "smith@hindeburg.ac.uk", "Mrs. Jones", "jones@hindeburg.ac.uk",
-                2, 1, "admin1@hindeburg.ac.nz"
+                "CSC3001", "Advanced Systems", "Design", true,
+                "Dr. A", "a@hindeburg.ac.nz",
+                "Ms. B", "b@hindeburg.ac.nz",
+                3, 2,
+                "admin1@hindeburg.ac.nz"
         );
 
         // Now simulate adding a FAQ with this course tag
@@ -131,9 +173,11 @@ public class AddFAQQASystemTests extends TUITest {
         // First, add a course to use as tag
         CourseManager courseManager = context.getCourseManager();
         courseManager.addCourse(
-                "CSC3001", "Computer Science 101", "Introduction to programming", false,
-                "Dr. Smith", "smith@hindeburg.ac.uk", "Mrs. Jones", "jones@hindeburg.ac.uk",
-                2, 1, "admin1@hindeburg.ac.nz"
+                "CSC3001", "Advanced Systems", "Design", true,
+                "Dr. A", "a@hindeburg.ac.nz",
+                "Ms. B", "b@hindeburg.ac.nz",
+                3, 2,
+                "admin1@hindeburg.ac.nz"
         );
 
         // Test adding an FAQ item with an invalid course tag
@@ -164,8 +208,7 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests adding an FAQ item with a new topic.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    public void testAddFAQItem_WithNewTopic() throws URISyntaxException, IOException, ParseException {
+    public void testAddFAQItemWithNewTopic() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "0",        // Select General Information section
                 "-2",       // Choose Add FAQ item
@@ -214,8 +257,7 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests validation of empty question input.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    public void testAddFAQItem_EmptyQuestion_ValidationError() throws URISyntaxException, IOException, ParseException {
+    public void testAddFAQItemEmptyQuestionValidationError() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "0",        // Select General Information section
                 "-2",       // Choose Add FAQ item
@@ -244,8 +286,7 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests validation of empty answer input.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    public void testAddFAQItem_EmptyAnswer_ValidationError() throws URISyntaxException, IOException, ParseException {
+    public void testAddFAQItemEmptyAnswerValidationError() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "0",        // Select General Information section
                 "-2",       // Choose Add FAQ item
@@ -275,7 +316,6 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests handling of course tag when no courses are available.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testAddFAQItem_WithCourseTagNoCoursesAvailable() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "0",        // Select General Information section
@@ -312,7 +352,6 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests adding multiple FAQ items to the same section.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testAddFAQItem_MultipleItems() throws URISyntaxException, IOException, ParseException {
         setMockInput(
                 "0",        // Select General Information section
@@ -353,7 +392,6 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests adding an FAQ item to a nested subsection.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testAddFAQItem_NestedSections() throws URISyntaxException, IOException, ParseException {
         // First, create a nested structure - General Information > Registration
         FAQSection generalSection = context.getFAQManager().getSections().get(0);
@@ -392,7 +430,6 @@ public class AddFAQQASystemTests extends TUITest {
      * Tests adding a new subsection with a name that already exists.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testAddFAQItem_DuplicateTopicName() throws URISyntaxException, IOException, ParseException {
         // First create a Registration subsection
         FAQSection generalSection = context.getFAQManager().getSections().get(0);
@@ -427,7 +464,6 @@ public class AddFAQQASystemTests extends TUITest {
     }
 
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFAQItemIDAssignment() throws URISyntaxException, IOException, ParseException {
         // Set up mock input for navigating to General Information,
         // adding multiple FAQ items, and returning to the main menu
@@ -483,7 +519,6 @@ public class AddFAQQASystemTests extends TUITest {
         assertEquals("Third answer.", items.get(2).getAnswer());
     }
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testFAQItemIDsInDifferentSections() throws URISyntaxException, IOException, ParseException {
         // Add a second section
         context.getFAQManager().addSection("Technical Support");

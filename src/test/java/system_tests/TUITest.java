@@ -1,10 +1,6 @@
 package system_tests;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URISyntaxException;
 
 import org.json.simple.parser.ParseException;
@@ -46,11 +42,33 @@ public class TUITest {
         System.setIn(in);
     }
 
+//    protected void startOutputCapture() {
+//         NOTE: be careful, if the captured output exceeds 8192 bytes, the remainder will be lost!
+//        out = new ByteArrayOutputStream(8192);
+//        System.setOut(new PrintStream(out));
+//    }
+
     protected void startOutputCapture() {
         // NOTE: be careful, if the captured output exceeds 8192 bytes, the remainder will be lost!
         out = new ByteArrayOutputStream(8192);
-        System.setOut(new PrintStream(out));
+        PrintStream originalOut = System.out; // Store the original output stream
+
+        // Create a new print stream that writes to both the capture buffer and the console
+        System.setOut(new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                out.write(b);
+                originalOut.write(b); // This will show in the console during debugging
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                out.write(b, off, len);
+                originalOut.write(b, off, len); // More efficient for larger writes
+            }
+        }));
     }
+
 
     protected void assertOutputContains(String expected) {
         String output = out.toString();
