@@ -138,11 +138,15 @@ public class AddFAQQASystemTests extends TUITest {
 
         // Test adding an FAQ item with an invalid course tag
         setMockInput(
+                "0",       // Select "General Information" section
+                "-2",      // Choose "Add FAQ item" option
                 "Databases", // new topic
                 "What is SQL?", // question
                 "SQL is a query language for databases.", // answer
                 "y", // yes to course tag
-                "INVALID123" // invalid course code
+                "INVALID123", // invalid course code
+                "-1",      // Return to main menu
+                "-1"       // Exit
         );
 
         view = new TextUserInterface();
@@ -420,5 +424,104 @@ public class AddFAQQASystemTests extends TUITest {
         // Item should be added to existing Registration section
         assertEquals(1, registrationSection.getItems().size(), "Should have added item to existing section");
         assertEquals("How do I register late?", registrationSection.getItems().get(0).getQuestion());
+    }
+
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    public void testFAQItemIDAssignment() throws URISyntaxException, IOException, ParseException {
+        // Set up mock input for navigating to General Information,
+        // adding multiple FAQ items, and returning to the main menu
+        setMockInput(
+                "0",        // Select General Information section
+                "-2",       // Choose Add FAQ item
+                "n",        // Don't create a new topic
+                "First question?",  // Question 1
+                "First answer.",    // Answer 1
+                "n",        // Don't add a course tag
+                "0",        // Stay in General Information section
+                "-2",       // Add another FAQ item
+                "n",        // Don't create a new topic
+                "Second question?", // Question 2
+                "Second answer.",   // Answer 2
+                "n",        // Don't add a course tag
+                "0",        // Stay in General Information section
+                "-2",       // Add another FAQ item
+                "n",        // Don't create a new topic
+                "Third question?",  // Question 3
+                "Third answer.",    // Answer 3
+                "n",        // Don't add a course tag
+                "-1",       // Return to main menu
+                "-1"        // Exit
+        );
+
+        // Create the view and controller after setting mock input
+        view = new TextUserInterface();
+        controller = new AdminStaffController(context, view,
+                new MockAuthenticationService(), new MockEmailService());
+
+        // Run the method
+        controller.manageFAQ();
+
+        // Verify the IDs of the added items
+        FAQSection section = context.getFAQManager().getSections().get(0);
+        List<FAQItem> items = section.getItems();
+
+        // Check that we have 3 items
+        assertEquals(3, items.size(), "Should have added 3 FAQ items");
+
+        // Check that the IDs are assigned sequentially
+        assertEquals(0, items.get(0).getId(), "First item should have ID 0");
+        assertEquals(1, items.get(1).getId(), "Second item should have ID 1");
+        assertEquals(2, items.get(2).getId(), "Third item should have ID 2");
+
+        // Also verify that the questions and answers match
+        assertEquals("First question?", items.get(0).getQuestion());
+        assertEquals("First answer.", items.get(0).getAnswer());
+        assertEquals("Second question?", items.get(1).getQuestion());
+        assertEquals("Second answer.", items.get(1).getAnswer());
+        assertEquals("Third question?", items.get(2).getQuestion());
+        assertEquals("Third answer.", items.get(2).getAnswer());
+    }
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    public void testFAQItemIDsInDifferentSections() throws URISyntaxException, IOException, ParseException {
+        // Add a second section
+        context.getFAQManager().addSection("Technical Support");
+
+        // Set up input for adding to both sections
+        setMockInput(
+                "0",        // Select "General Information" section
+                "-2",       // Add FAQ item
+                "n",        // Don't create a new topic
+                "General question?", // Question
+                "General answer.",   // Answer
+                "n",        // No course tag
+                "-1",        // Select "Technical Support" section
+                "1",
+                "-2",       // Add FAQ item
+                "n",        // Don't create a new topic
+                "Technical question?", // Question
+                "Technical answer.",   // Answer
+                "n",        // No course tag
+                "-1",       // Return to main menu
+                "-1"        // Exit
+        );
+
+        view = new TextUserInterface();
+        controller = new AdminStaffController(context, view,
+                new MockAuthenticationService(), new MockEmailService());
+
+        controller.manageFAQ();
+
+        // Verify each section has its own ID sequence
+        FAQSection generalSection = context.getFAQManager().getSections().get(0);
+        FAQSection techSection = context.getFAQManager().getSections().get(1);
+
+        assertEquals(1, generalSection.getItems().size(), "General section should have 1 item");
+        assertEquals(1, techSection.getItems().size(), "Tech section should have 1 item");
+
+        // Each section should start its IDs from 0
+        assertEquals(0, generalSection.getItems().get(0).getId(), "General section item should have ID 0");
+        assertEquals(0, techSection.getItems().get(0).getId(), "Tech section item should have ID 0");
     }
 }

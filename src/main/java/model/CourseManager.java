@@ -16,9 +16,10 @@ public class CourseManager {
     private SharedContext sharedContext;
 
 
-    public CourseManager(View view) {
+    public CourseManager(View view, SharedContext sharedContext) {
         this.courseMap = new HashMap<>();
         this.view = view;
+        this.sharedContext = sharedContext;
     }
 
     /**
@@ -100,7 +101,7 @@ public class CourseManager {
     public String[] removeCourse(String courseCode) {
         Course removed = courseMap.remove(courseCode);
         //String userEmail = SharedContext.getInstance().currentUser.getEmail(); // TODO: this is the old way - without the dependancy
-        String userEmail = sharedContext.getCurrentUserEmail(); // new way
+        String userEmail = sharedContext.getCurrentUserEmail();
 
         if (removed == null) {
             LogUtil.logAction(
@@ -190,8 +191,8 @@ public class CourseManager {
 
     //TODO: implement
     public boolean hasCourse(String courseTag) {
-        //return courseMap.containsKey(courseTag);
-        throw new UnsupportedOperationException("hasCourse Not supported yet.");
+        return courseMap.containsKey(courseTag);
+        //throw new UnsupportedOperationException("hasCourse Not supported yet.");
     }
 
 }

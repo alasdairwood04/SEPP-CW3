@@ -80,13 +80,16 @@ public class RemoveCourseSystemTest extends TUITest {
     }
 
     @Test
-    public void testRemoveNonexistentCourse() {
+    public void testRemoveNonexistentCourse() throws URISyntaxException, IOException, ParseException {
         setMockInput("NON9999"); // non-existent course
 
         //controller = new AdminController(context, view, new MockEmailService());
+        context.currentUser = new AuthenticatedUser("admin1@hindeburg.ac.nz", "AdminStaff");
+
+        AdminStaffController admin = new AdminStaffController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
 
         startOutputCapture();
-        controller.removeCourse();
+        admin.removeCourse();
         assertOutputContains("Course not found");
     }
 }

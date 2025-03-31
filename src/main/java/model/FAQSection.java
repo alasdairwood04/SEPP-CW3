@@ -21,7 +21,7 @@ public class FAQSection {
 
     // add item without courseTag
     public void addItem(String question, String answer) {
-        int id = items.size() + 1;
+        int id = items.size();
         items.add(new FAQItem(id, question, answer));
     }
 
@@ -29,6 +29,7 @@ public class FAQSection {
     public void addItem(String question, String answer, String courseTag) {
         int id = items.size();
         items.add(new FAQItem(id, question, answer, courseTag));
+        System.out.println(items.size());
     }
 
     // removes item using the ID

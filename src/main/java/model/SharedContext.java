@@ -20,7 +20,10 @@ public class SharedContext {
         this.view = view;
         this.faqManager = new FAQManager(view);
         this.studentTimetables = new HashMap<>(); // TODO: initialize timetable storage
-        this.courseManager = new CourseManager(view); //TODO : initialize course manager
+        //this.courseManager = new CourseManager(view); //TODO : initialize course manager
+        // Pass 'this' (SharedContext) to CourseManager
+        this.courseManager = new CourseManager(view, this);
+
     }
 
     public FAQ getFAQ() {
