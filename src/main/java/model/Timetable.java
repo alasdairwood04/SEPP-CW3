@@ -91,6 +91,28 @@ public class Timetable {
         return null;
     }
 
+    /**
+     * Returns a string representation of the timetable, showing only activities scheduled for the working week (Monday to Friday).
+     */
+    public String toWorkingWeekString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Timetable for ").append(studentEmail).append(" (Working Week):\n");
+        boolean hasWorkingWeekSlots = false;
+        for (TimeSlot slot : timeSlots) {
+            // Check if the day is between Monday and Friday (inclusive)
+            if (slot.getDay().getValue() >= DayOfWeek.MONDAY.getValue() &&
+                    slot.getDay().getValue() <= DayOfWeek.FRIDAY.getValue()) {
+                sb.append(slot.toString()).append("\n");
+                hasWorkingWeekSlots = true;
+            }
+        }
+        if (!hasWorkingWeekSlots) {
+            return "No scheduled activities for the working week.";
+        }
+        return sb.toString().trim();
+    }
+
+
     @Override
     public String toString() {
         if (timeSlots.isEmpty()) {
