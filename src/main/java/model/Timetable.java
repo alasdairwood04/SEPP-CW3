@@ -2,6 +2,7 @@ package model;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
@@ -72,24 +73,24 @@ public class Timetable {
         return false;
     }
 
-    /**
-     * Checks for time conflicts with existing activities.
-     * Returns an array: [conflictingCourseCode, activityId] or null if no conflict.
-     */
     public String[] checkConflicts(LocalDate startDate, LocalTime startTime,
                                    LocalDate endDate, LocalTime endTime) {
-        for (TimeSlot slot : timeSlots) {
-            boolean overlaps = !startDate.isAfter(slot.getEndDate()) &&
-                    !endDate.isBefore(slot.getStartDate()) &&
-                    !startTime.isAfter(slot.getEndTime()) &&
-                    !endTime.isBefore(slot.getStartTime());
+        // Combine the dates and times into LocalDateTime objects
+        LocalDateTime newStart = LocalDateTime.of(startDate, startTime);
+        LocalDateTime newEnd = LocalDateTime.of(endDate, endTime);
 
-            if (overlaps) {
+        for (TimeSlot slot : timeSlots) {
+            LocalDateTime slotStart = LocalDateTime.of(slot.getStartDate(), slot.getStartTime());
+            LocalDateTime slotEnd = LocalDateTime.of(slot.getEndDate(), slot.getEndTime());
+
+            // Overlap condition: newStart is before slotEnd and newEnd is after slotStart.
+            if (newStart.isBefore(slotEnd) && newEnd.isAfter(slotStart)) {
                 return new String[]{slot.getCourseCode(), String.valueOf(slot.getActivityId())};
             }
         }
         return null;
     }
+
 
     /**
      * Returns a string representation of the timetable, showing only activities scheduled for the working week (Monday to Friday).
