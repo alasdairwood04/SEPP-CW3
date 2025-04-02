@@ -81,8 +81,23 @@ public class AdminController {
                 String location = view.getInput("Enter location: ");
                 DayOfWeek day = DayOfWeek.valueOf(view.getInput("Enter day of week (e.g., MONDAY): ").toUpperCase());
 
-                Activity activity = new ConcreteActivity(id, startDate, startTime, endDate, endTime, location, day);
-                course.addActivity(activity);
+                Activity newActivity = new ConcreteActivity(id, startDate, startTime, endDate, endTime, location, day);
+                // Check for overlap
+                boolean conflict = false;
+                for (Activity existing : course.getActivities()) {
+                    if (newActivity.overlapsWith(existing)) {
+                        conflict = true;
+                        break;
+                    }
+                }
+
+                if (conflict) {
+                    view.displayWarning("This activity overlaps with an existing one. Skipped.");
+                } else {
+                    course.addActivity(newActivity);
+                    view.displaySuccess("Activity added.");
+                }
+                course.addActivity(newActivity);
 
             } catch (Exception e) {
                 view.displayError("Invalid activity input. Please try again.");

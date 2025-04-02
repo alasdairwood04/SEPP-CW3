@@ -2,6 +2,7 @@ package model;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
 
@@ -61,6 +62,27 @@ public abstract class Activity {
     }
 
     public abstract String getType();
+
+    public LocalDateTime getStartDateTime() {
+        return LocalDateTime.of(startDate, startTime);
+    }
+
+    
+    public LocalDateTime getEndDateTime() {
+        return LocalDateTime.of(endDate, endTime);
+    }
+
+    public boolean overlapsWith(Activity other) {
+        if (!this.day.equals(other.day)) return false;
+
+        LocalDateTime thisStart = LocalDateTime.of(this.startDate, this.startTime);
+        LocalDateTime thisEnd = LocalDateTime.of(this.endDate, this.endTime);
+
+        LocalDateTime otherStart = LocalDateTime.of(other.startDate, other.startTime);
+        LocalDateTime otherEnd = LocalDateTime.of(other.endDate, other.endTime);
+
+        return thisStart.isBefore(otherEnd) && thisEnd.isAfter(otherStart);
+    }
 
     @Override
     public String toString() {
