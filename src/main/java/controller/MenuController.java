@@ -36,6 +36,9 @@ public class MenuController extends Controller {
         LOGOUT,
         MANAGE_QUERIES,
         MANAGE_FAQ,
+        MANAGE_COURSES,
+        VIEW_COURSES,
+        VIEW_SPECIFIC_COURSE
     }
 
     public void mainMenu() {
@@ -124,10 +127,23 @@ public class MenuController extends Controller {
             return true;
         }
         AdminStaffMainMenuOption option = AdminStaffMainMenuOption.values()[optionNo];
+        AdminStaffController adminStaffController = new AdminStaffController(sharedContext, view, auth, email);
+
         switch (option) {
-            case LOGOUT -> new AuthenticatedUserController(sharedContext, view, auth, email).logout();
-            case MANAGE_FAQ -> new AdminStaffController(sharedContext, view, auth, email).manageFAQ();
-            case MANAGE_QUERIES -> new AdminStaffController(sharedContext, view, auth, email).manageInquiries();
+            case LOGOUT ->
+                    new AuthenticatedUserController(sharedContext, view, auth, email).logout();
+            case MANAGE_FAQ ->
+                    adminStaffController.manageFAQ();
+            case MANAGE_QUERIES ->
+                    adminStaffController.manageInquiries();
+            case MANAGE_COURSES ->
+                    adminStaffController.manageCourses();
+            case VIEW_COURSES ->
+                    adminStaffController.viewCourses();
+            case VIEW_SPECIFIC_COURSE -> {
+                String courseCode = view.getInput("Enter course code: ");
+                new ViewerController(sharedContext, view, auth, email).viewSpecificCourse(courseCode);
+            }
         }
         return false;
     }

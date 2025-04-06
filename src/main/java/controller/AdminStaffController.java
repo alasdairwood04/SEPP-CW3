@@ -256,6 +256,36 @@ public class AdminStaffController extends StaffController {
         view.displaySuccess("Inquiry has been reassigned");
     }
 
+    public void manageCourses() {
+        boolean exit = false;
+        while (!exit) {
+            view.displayInfo("Course Management:");
+            view.displayInfo("[1] Add Course");
+            view.displayInfo("[2] View Courses");
+            view.displayInfo("[3] Remove Course");
+            view.displayInfo("[0] Back to Main Menu");
+
+            int choice = view.getIntegerInput("Enter your choice: ");
+
+            switch (choice) {
+                case 1:
+                    addCourse();
+                    break;
+                case 2:
+                    viewCourses();
+                    break;
+                case 3:
+                    removeCourse();
+                    break;
+                case 0:
+                    exit = true;
+                    break;
+                default:
+                    view.displayError("Invalid option. Please try again.");
+            }
+        }
+    }
+
     /**
      * Add a new course to the system.
      */
