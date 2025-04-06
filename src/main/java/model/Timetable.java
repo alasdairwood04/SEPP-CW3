@@ -35,16 +35,35 @@ public class Timetable {
 
     /**
      * Returns true if there's any slot for the given course code.
+     * This method is case-insensitive to make the lookup more robust.
      */
     public boolean hasSlotsForCourse(String courseCode) {
-        return timeSlots.stream().anyMatch(slot -> slot.hasCourseCode(courseCode));
+        if (courseCode == null || courseCode.trim().isEmpty()) {
+            return false;
+        }
+
+        // Case-insensitive comparison to be more user-friendly
+        String normalizedCode = courseCode.trim().toUpperCase();
+
+        return timeSlots.stream()
+                .anyMatch(slot -> slot.getCourseCode() != null &&
+                        slot.getCourseCode().toUpperCase().equals(normalizedCode));
     }
 
     /**
      * Removes all slots for the given course.
+     * This method is case-insensitive to make the removal more robust.
      */
     public void removeSlotsForCourse(String courseCode) {
-        timeSlots.removeIf(slot -> slot.hasCourseCode(courseCode));
+        if (courseCode == null || courseCode.trim().isEmpty()) {
+            return;
+        }
+
+        // Case-insensitive comparison to be more user-friendly
+        String normalizedCode = courseCode.trim().toUpperCase();
+
+        timeSlots.removeIf(slot -> slot.getCourseCode() != null &&
+                slot.getCourseCode().toUpperCase().equals(normalizedCode));
     }
 
     /**
@@ -73,6 +92,10 @@ public class Timetable {
         return false;
     }
 
+    /**
+     * Checks for conflicts with a proposed new activity time.
+     * Returns the conflicting course and activity ID if found.
+     */
     public String[] checkConflicts(LocalDate startDate, LocalTime startTime,
                                    LocalDate endDate, LocalTime endTime) {
         // Combine the dates and times into LocalDateTime objects
@@ -91,15 +114,23 @@ public class Timetable {
         return null;
     }
 
-
     /**
      * Returns a string representation of the timetable, showing only activities scheduled for the working week (Monday to Friday).
+     * Enhanced to ensure activities are properly displayed.
      */
     public String toWorkingWeekString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Timetable for ").append(studentEmail).append(" (Working Week):\n");
+
+        // Sort time slots by day of week and start time for better readability
+        List<TimeSlot> sortedSlots = new ArrayList<>(timeSlots);
+        sortedSlots.sort(Comparator
+                .comparing(TimeSlot::getDay)
+                .thenComparing(TimeSlot::getStartTime));
+
         boolean hasWorkingWeekSlots = false;
-        for (TimeSlot slot : timeSlots) {
+
+        for (TimeSlot slot : sortedSlots) {
             // Check if the day is between Monday and Friday (inclusive)
             if (slot.getDay().getValue() >= DayOfWeek.MONDAY.getValue() &&
                     slot.getDay().getValue() <= DayOfWeek.FRIDAY.getValue()) {
@@ -107,12 +138,13 @@ public class Timetable {
                 hasWorkingWeekSlots = true;
             }
         }
+
         if (!hasWorkingWeekSlots) {
             return "No scheduled activities for the working week.";
         }
+
         return sb.toString().trim();
     }
-
 
     @Override
     public String toString() {
@@ -122,7 +154,14 @@ public class Timetable {
 
         StringBuilder sb = new StringBuilder();
         sb.append("Timetable for ").append(studentEmail).append(":\n");
-        for (TimeSlot slot : timeSlots) {
+
+        // Sort time slots by day of week and start time for better readability
+        List<TimeSlot> sortedSlots = new ArrayList<>(timeSlots);
+        sortedSlots.sort(Comparator
+                .comparing(TimeSlot::getDay)
+                .thenComparing(TimeSlot::getStartTime));
+
+        for (TimeSlot slot : sortedSlots) {
             sb.append(slot).append("\n");
         }
         return sb.toString().trim();

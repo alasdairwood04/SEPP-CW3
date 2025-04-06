@@ -24,9 +24,7 @@ public class CourseManager {
 
     /**
      * Adds a new course to the system if the courseCode is unique.
-
      */
-
     public AddCourseResult addCourse(String code, String name, String description, boolean requiresComputers,
                                      String coName, String coEmail, String csName, String csEmail,
                                      int requiredTutorials, int requiredLabs,
@@ -70,19 +68,12 @@ public class CourseManager {
         return new AddCourseResult(true, "Course added successfully.");
     }
 
-
-
-
-
-//    private boolean checkCourseCode(String code) {
-//        return code != null && !code.trim().isEmpty();
-//    }
-
+    /**
+     * Validates course code format: three uppercase letters followed by four digits.
+     */
     private boolean checkCourseCode(String code) {
-        //Three uppercase letters followed by four digits
         return code != null && code.matches("^[A-Z]{3}[0-9]{4}$");
     }
-
 
     /**
      * Returns whether a course with the given code exists.
@@ -97,10 +88,8 @@ public class CourseManager {
      *
      * @return list of email addresses to notify or null if course not found.
      */
-
     public String[] removeCourse(String courseCode) {
         Course removed = courseMap.remove(courseCode);
-        //String userEmail = SharedContext.getInstance().currentUser.getEmail(); // TODO: this is the old way - without the dependancy
         String userEmail = sharedContext.getCurrentUserEmail();
 
         if (removed == null) {
@@ -184,17 +173,27 @@ public class CourseManager {
         return courseMap.values();
     }
 
-    // TODO: implent
+    /**
+     * Returns the CourseManager instance.
+     */
     public CourseManager getCourseManager() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return this; // Return this instance to prevent null pointer exceptions
     }
 
-    //TODO: implement
+    /**
+     * Checks if a course with the given tag exists.
+     */
     public boolean hasCourse(String courseTag) {
         return courseMap.containsKey(courseTag);
-        //throw new UnsupportedOperationException("hasCourse Not supported yet.");
     }
 
+    /**
+     * Adds a course to a student's timetable.
+     *
+     * @param studentEmail The email of the student
+     * @param courseCode The code of the course to add
+     * @return true if the course was added successfully, false otherwise
+     */
     public boolean addCourseToStudentTimetable(String studentEmail, String courseCode) {
         if (!isValidCourseCode(courseCode, studentEmail)) {
             view.displayError("Invalid course code.");
@@ -293,7 +292,6 @@ public class CourseManager {
         }
     }
 
-
     /**
      * Marks a specific activity (tutorial/lab) as chosen for a course already added to a student's timetable.
      *
@@ -337,7 +335,4 @@ public class CourseManager {
                 "SUCCESS");
         return true;
     }
-
-
-
 }

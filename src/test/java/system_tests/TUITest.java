@@ -5,7 +5,7 @@ import java.net.URISyntaxException;
 
 import org.json.simple.parser.ParseException;
 import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 
 import controller.GuestController;
@@ -42,12 +42,6 @@ public class TUITest {
         System.setIn(in);
     }
 
-//    protected void startOutputCapture() {
-//         NOTE: be careful, if the captured output exceeds 8192 bytes, the remainder will be lost!
-//        out = new ByteArrayOutputStream(8192);
-//        System.setOut(new PrintStream(out));
-//    }
-
     protected void startOutputCapture() {
         // NOTE: be careful, if the captured output exceeds 8192 bytes, the remainder will be lost!
         out = new ByteArrayOutputStream(8192);
@@ -69,15 +63,24 @@ public class TUITest {
         }));
     }
 
-    public String getCapturedOutput() {
+    protected void resetOutputCapture() {
+        out.reset();
+    }
+
+    protected String getCapturedOutput() {
         return out.toString();
     }
 
-
-
     protected void assertOutputContains(String expected) {
         String output = out.toString();
-        assertTrue(output.contains(expected), "Output does not contain expected '" + expected + "':" + System.lineSeparator() + output);
+        assertTrue(output.contains(expected),
+                "Output does not contain expected '" + expected + "':" + System.lineSeparator() + output);
+    }
+
+    protected void assertOutputNotContains(String unexpected) {
+        String output = out.toString();
+        assertFalse(output.contains(unexpected),
+                "Output should not contain '" + unexpected + "' but it does:" + System.lineSeparator() + output);
     }
 
     protected void loginAsAdminStaff(SharedContext context) throws URISyntaxException, IOException, ParseException {
@@ -85,17 +88,16 @@ public class TUITest {
         GuestController guestController = new GuestController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
         guestController.login();
     }
- 
+
     protected void loginAsTeachingStaff(SharedContext context) throws URISyntaxException, IOException, ParseException {
         setMockInput("teacher1", "teacher1pass");
         GuestController guestController = new GuestController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
         guestController.login();
     }
- 
+
     protected void loginAsStudent(SharedContext context) throws URISyntaxException, IOException, ParseException {
         setMockInput("student1", "student1pass");
         GuestController guestController = new GuestController(context, new TextUserInterface(), new MockAuthenticationService(), new MockEmailService());
         guestController.login();
     }
-
 }

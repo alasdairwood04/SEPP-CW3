@@ -36,8 +36,15 @@ public class TimeSlot {
     public String getCourseCode() { return courseCode; }
     public int getActivityId() { return activityId; }
 
+    /**
+     * Checks if this time slot is for the given course code.
+     * Updated to be case-insensitive to make lookup more robust.
+     */
     public boolean hasCourseCode(String code) {
-        return courseCode.equals(code);
+        if (code == null || courseCode == null) {
+            return false;
+        }
+        return courseCode.equalsIgnoreCase(code.trim());
     }
 
     public boolean hasActivityId(int id) {
@@ -52,10 +59,21 @@ public class TimeSlot {
         this.status = status;
     }
 
+    /**
+     * Enhanced toString method to ensure courses are properly displayed in timetables.
+     * Represents the time slot as a string, with clear indication of course code, activity ID, and status.
+     */
     @Override
     public String toString() {
-        return "[" + courseCode + " - " + activityId + " - " + status + "] "
-                + day + " " + startTime + "-" + endTime
-                + " (" + startDate + " to " + endDate + ")";
+        return String.format("[%s - %d - %s] %s %s-%s (%s to %s) %s",
+                courseCode,
+                activityId,
+                status,
+                day,
+                startTime,
+                endTime,
+                startDate,
+                endDate,
+                (status == TimeSlotStatus.CHOSEN ? "✓" : ""));
     }
 }
