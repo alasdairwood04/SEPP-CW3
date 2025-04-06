@@ -39,6 +39,10 @@ public class AddFAQQASystemTests extends TUITest {
         context.getFAQManager().addSection("General Information");
     }
 
+    /**
+     * Tests that a new FAQ section and item can be created at the root level
+     * when there are no existing sections.
+     */
     @Test
     public void testAddFAQItemAtRootLevel() throws URISyntaxException, IOException, ParseException {
         // Clear existing sections from the setup
@@ -81,7 +85,7 @@ public class AddFAQQASystemTests extends TUITest {
     }
 
     /**
-     * Tests adding a basic FAQ item without a course tag.
+     * Tests adding a basic FAQ item without a course tag to an existing section.
      */
     @Test
     public void testAddFAQItem_Basic() throws URISyntaxException, IOException, ParseException {
@@ -123,6 +127,9 @@ public class AddFAQQASystemTests extends TUITest {
     }
 
 
+    /**
+     * tests that an FAQ item can be successfully created with a valid course tag
+     */
     @Test
     public void testAddFAQWithCourseTag() throws URISyntaxException, IOException, ParseException {
         // First, add a course to use as tag
@@ -167,7 +174,10 @@ public class AddFAQQASystemTests extends TUITest {
         assertEquals("CSC3001", section.getItems().get(0).getCourseTag());
     }
 
-
+    /**
+     * Tests that an appropriate error message is displayed when attempting
+     * to add an FAQ item with an invalid course tag.
+     */
     @Test
     public void testAddFAQItemWithInvalidCourseTag() throws URISyntaxException, IOException, ParseException {
         // First, add a course to use as tag
@@ -254,7 +264,8 @@ public class AddFAQQASystemTests extends TUITest {
     }
 
     /**
-     * Tests validation of empty question input.
+     * Tests that the system properly validates and rejects attempts
+     * to add an FAQ item with an empty question.
      */
     @Test
     public void testAddFAQItemEmptyQuestionValidationError() throws URISyntaxException, IOException, ParseException {
@@ -463,6 +474,10 @@ public class AddFAQQASystemTests extends TUITest {
         assertEquals("How do I register late?", registrationSection.getItems().get(0).getQuestion());
     }
 
+    /**
+     * Tests that FAQ items are assigned unique IDs within a section
+     * when multiple items are added.
+     */
     @Test
     public void testFAQItemIDAssignment() throws URISyntaxException, IOException, ParseException {
         // Set up mock input for navigating to General Information,
@@ -518,6 +533,11 @@ public class AddFAQQASystemTests extends TUITest {
         assertEquals("Third question?", items.get(2).getQuestion());
         assertEquals("Third answer.", items.get(2).getAnswer());
     }
+
+    /**
+     * Tests that ID assignment is section-specific, with each section
+     * starting its own ID sequence from 0.
+     */
     @Test
     public void testFAQItemIDsInDifferentSections() throws URISyntaxException, IOException, ParseException {
         // Add a second section
