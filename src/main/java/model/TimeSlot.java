@@ -28,6 +28,7 @@ public class TimeSlot {
         this.status = status;
     }
 
+    public DayOfWeek getDay() { return day; }
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
     public LocalTime getStartTime() { return startTime; }

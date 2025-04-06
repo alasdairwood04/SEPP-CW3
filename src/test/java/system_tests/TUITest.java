@@ -69,6 +69,11 @@ public class TUITest {
         }));
     }
 
+    public String getCapturedOutput() {
+        return out.toString();
+    }
+
+
 
     protected void assertOutputContains(String expected) {
         String output = out.toString();
