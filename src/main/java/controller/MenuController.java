@@ -20,7 +20,12 @@ public class MenuController extends Controller {
         LOGOUT,
         CONSULT_FAQ,
         CONTACT_STAFF,
+        ADD_COURSE_TO_TIMETABLE,
+        VIEW_TIMETABLE,
+        CHOOSE_ACTIVITY_FOR_COURSE,
+        REMOVE_COURSE_FROM_TIMETABLE
     }
+
 
     public enum TeachingStaffMainMenuOption {
         LOGOUT,
@@ -82,13 +87,26 @@ public class MenuController extends Controller {
             return true;
         }
         StudentMainMenuOption option = StudentMainMenuOption.values()[optionNo];
+        StudentController studentController = new StudentController(sharedContext, view, auth, email);
         switch (option) {
-            case LOGOUT -> new AuthenticatedUserController(sharedContext, view, auth, email).logout();
-            case CONSULT_FAQ -> new InquirerController(sharedContext, view, auth, email).consultFAQ();
-            case CONTACT_STAFF -> new InquirerController(sharedContext, view, auth, email).contactStaff();
+            case LOGOUT ->
+                    new AuthenticatedUserController(sharedContext, view, auth, email).logout();
+            case CONSULT_FAQ ->
+                    new InquirerController(sharedContext, view, auth, email).consultFAQ();
+            case CONTACT_STAFF ->
+                    new InquirerController(sharedContext, view, auth, email).contactStaff();
+            case ADD_COURSE_TO_TIMETABLE ->
+                    studentController.addCourseToTimetable();
+            case VIEW_TIMETABLE ->
+                    studentController.viewTimetable();
+            case CHOOSE_ACTIVITY_FOR_COURSE ->
+                    studentController.chooseActivityForCourse();
+            case REMOVE_COURSE_FROM_TIMETABLE ->
+                    studentController.removeCourseFromTimetable();
         }
         return false;
     }
+
 
     private boolean handleTeachingStaffMainMenu() {
         int optionNo = selectFromMenu(TeachingStaffMainMenuOption.values(), "Exit");

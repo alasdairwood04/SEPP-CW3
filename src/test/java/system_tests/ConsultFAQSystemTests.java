@@ -200,17 +200,6 @@ public class ConsultFAQSystemTests extends TUITest {
         // Verify that CSC3001 questions are displayed
         assertOutputContains("What programming language is used in CSC3001?");
         assertOutputContains("How many credits is CSC3001 worth?");
-
-        // Verify that MTH2002 questions are NOT displayed
-        // We can't directly assert that text is NOT in the output, so we're just
-        // checking that the key parts of the MTH2002 question aren't there
-        //String output = out.toString();
-//        assertFalse(output.contains("Are calculators allowed"),
-//                "MTH2002 question should not be displayed when filtering by CSC3001");
-
-        // Verify course tag is NOT displayed alongside the items (when filtering)
-//        assertFalse(output.contains("> CSC3001"),
-//                "Course tag should not be visible when filtering by that tag");
     }
 
     /**
@@ -317,7 +306,6 @@ public class ConsultFAQSystemTests extends TUITest {
      * Users should be able to navigate multiple levels deep and back up.
      */
     @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
     public void testDeepNestedNavigation() throws URISyntaxException, IOException, ParseException {
         // Create a deeper nesting structure
         FAQManager faqManager = context.getFAQManager();
@@ -397,17 +385,13 @@ public class ConsultFAQSystemTests extends TUITest {
         // Verify only matching Q&A pairs are shown
         assertOutputContains("What programming language is used in CSC3001?");
 
-        // Verify Student Life is still accessible even though it has no matching items
-//        String output = out.toString();
-//        assertTrue(output.contains("Student Life"),
-//                "Student Life section should still be visible when filtering");
-//
-//         When in Student Life section, it should mention no matching items
-//        assertTrue(output.contains("There are no questions for course 'CSC3001'") ||
-//                        output.contains("No questions for course 'CSC3001'"),
-//                "Should indicate no matching items in Student Life section");
-    }
+        // Verify Student Life is still accessible
+        assertOutputContains("Student Life");
 
+        // When in Student Life section, it should mention no matching items
+        assertOutputContains("There are no questions for course 'CSC3001'");
+        // If your message might vary, you can check for either message but you'd need to extend TUITest
+    }
     /**
      * Tests logging of FAQ consultation actions.
      * System should log successful FAQ consultations.

@@ -24,9 +24,7 @@ public class CourseManager {
 
     /**
      * Adds a new course to the system if the courseCode is unique.
-
      */
-
     public AddCourseResult addCourse(String code, String name, String description, boolean requiresComputers,
                                      String coName, String coEmail, String csName, String csEmail,
                                      int requiredTutorials, int requiredLabs,
@@ -70,19 +68,12 @@ public class CourseManager {
         return new AddCourseResult(true, "Course added successfully.");
     }
 
-
-
-
-
-//    private boolean checkCourseCode(String code) {
-//        return code != null && !code.trim().isEmpty();
-//    }
-
+    /**
+     * Validates course code format: three uppercase letters followed by four digits.
+     */
     private boolean checkCourseCode(String code) {
-        //Three uppercase letters followed by four digits
         return code != null && code.matches("^[A-Z]{3}[0-9]{4}$");
     }
-
 
     /**
      * Returns whether a course with the given code exists.
@@ -97,10 +88,8 @@ public class CourseManager {
      *
      * @return list of email addresses to notify or null if course not found.
      */
-
     public String[] removeCourse(String courseCode) {
         Course removed = courseMap.remove(courseCode);
-        //String userEmail = SharedContext.getInstance().currentUser.getEmail(); // TODO: this is the old way - without the dependancy
         String userEmail = sharedContext.getCurrentUserEmail();
 
         if (removed == null) {
@@ -184,15 +173,166 @@ public class CourseManager {
         return courseMap.values();
     }
 
-    // TODO: implent
+    /**
+     * Returns the CourseManager instance.
+     */
     public CourseManager getCourseManager() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return this; // Return this instance to prevent null pointer exceptions
     }
 
-    //TODO: implement
+    /**
+     * Checks if a course with the given tag exists.
+     */
     public boolean hasCourse(String courseTag) {
         return courseMap.containsKey(courseTag);
-        //throw new UnsupportedOperationException("hasCourse Not supported yet.");
     }
 
+    /**
+     * Adds a course to a student's timetable.
+     *
+     * @param studentEmail The email of the student
+     * @param courseCode The code of the course to add
+     * @return true if the course was added successfully, false otherwise
+     */
+    public boolean addCourseToStudentTimetable(String studentEmail, String courseCode) {
+        if (!isValidCourseCode(courseCode, studentEmail)) {
+            view.displayError("Invalid course code.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable", courseCode,
+                    "FAILURE (Invalid input)");
+            return false;
+        }
+        if (!courseExists(courseCode, studentEmail)) {
+            view.displayError("Course " + courseCode + " does not exist.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable", courseCode,
+                    "FAILURE (Course does not exist)");
+            return false;
+        }
+
+        Course course = getCourse(courseCode);
+        Timetable timetable = sharedContext.getOrCreateTimetable(studentEmail);
+
+        if (!processActivities(course, timetable, studentEmail)) {
+            return false;
+        }
+
+        postAdditionCheck(course, timetable, studentEmail);
+
+        view.displaySuccess("Course " + courseCode + " added to your timetable.");
+        LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable",
+                courseCode, "SUCCESS");
+        return true;
+    }
+
+    private boolean isValidCourseCode(String courseCode, String studentEmail) {
+        if (courseCode == null || courseCode.trim().isEmpty()) {
+            view.displayError("Invalid course code.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable", courseCode,
+                    "FAILURE (Invalid input)");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean courseExists(String courseCode, String studentEmail) {
+        if (!hasCode(courseCode)) {
+            view.displayError("Course " + courseCode + " does not exist.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable", courseCode,
+                    "FAILURE (Course does not exist)");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean processActivities(Course course, Timetable timetable, String studentEmail) {
+        for (Activity activity : course.getActivities()) {
+            String[] conflict = timetable.checkConflicts(
+                    activity.getStartDate(), activity.getStartTime(),
+                    activity.getEndDate(), activity.getEndTime()
+            );
+
+            if (conflict != null) {
+                if (course.isUnrecordedLecture(activity.getId())) {
+                    view.displayError("Cannot add course due to conflict with unrecorded lecture from course "
+                            + conflict[0] + " (Activity ID: " + conflict[1] + ").");
+                    LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable",
+                            course.getCourseCode(), "FAILURE (Unrecorded lecture conflict)");
+                    return false;
+                } else {
+                    view.displayWarning("Warning: Conflict detected with course "
+                            + conflict[0] + " (Activity ID: " + conflict[1] + "). Adding course anyway.");
+                    LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable",
+                            course.getCourseCode(), "WARNING (Conflict with another activity)");
+                }
+            }
+
+            TimeSlotStatus status = "Lecture".equals(activity.getType()) ?
+                    TimeSlotStatus.CHOSEN : TimeSlotStatus.UNCHOSEN;
+            timetable.addTimeSlot(
+                    activity.getDay(),
+                    activity.getStartDate(),
+                    activity.getStartTime(),
+                    activity.getEndDate(),
+                    activity.getEndTime(),
+                    course.getCourseCode(),
+                    activity.getId(),
+                    status
+            );
+        }
+        return true;
+    }
+
+    private void postAdditionCheck(Course course, Timetable timetable, String studentEmail) {
+        int chosenCount = timetable.numChosenActivities(course.getCourseCode());
+        int requiredSelections = course.getRequiredTutorials() + course.getRequiredLabs();
+        if (chosenCount < requiredSelections) {
+            view.displayWarning("You have not yet chosen all required tutorials/labs. ("
+                    + chosenCount + "/" + requiredSelections + ")");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "addCourseToStudentTimetable",
+                    course.getCourseCode(), "WARNING (Incomplete lab/tutorial selection)");
+        }
+    }
+
+    /**
+     * Marks a specific activity (tutorial/lab) as chosen for a course already added to a student's timetable.
+     *
+     * @param studentEmail the email of the student
+     * @param courseCode   the code of the course
+     * @param activityId   the identifier of the activity to choose
+     * @return true if the activity was marked as chosen successfully, false otherwise
+     */
+    public boolean chooseActivityForCourse(String studentEmail, String courseCode, int activityId) {
+        // Validate that the course exists.
+        if (!hasCode(courseCode)) {
+            view.displayError("Course " + courseCode + " does not exist.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "chooseActivityForCourse", courseCode,
+                    "FAILURE (Course does not exist)");
+            return false;
+        }
+
+        // Retrieve the student's timetable (create if it doesn't exist)
+        Timetable timetable = sharedContext.getOrCreateTimetable(studentEmail);
+
+        // Ensure that the timetable has at least one timeslot for the specified course.
+        if (!timetable.hasSlotsForCourse(courseCode)) {
+            view.displayError("Course " + courseCode + " is not in your timetable.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "chooseActivityForCourse", courseCode,
+                    "FAILURE (Course not in timetable)");
+            return false;
+        }
+
+        // Attempt to mark the activity as chosen.
+        boolean chosen = timetable.chooseActivity(courseCode, activityId);
+        if (!chosen) {
+            view.displayError("Activity with ID " + activityId + " for course " + courseCode + " not found in your timetable.");
+            LogUtil.logAction(LocalDateTime.now(), studentEmail, "chooseActivityForCourse", courseCode,
+                    "FAILURE (Activity not found in timetable)");
+            return false;
+        }
+
+        // Log success and notify the user.
+        view.displaySuccess("Activity " + activityId + " for course " + courseCode + " has been chosen successfully.");
+        LogUtil.logAction(LocalDateTime.now(), studentEmail, "chooseActivityForCourse", courseCode,
+                "SUCCESS");
+        return true;
+    }
 }
