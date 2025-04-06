@@ -31,6 +31,9 @@ public class MenuController extends Controller {
         LOGOUT,
         MANAGE_QUERIES,
         MANAGE_FAQ,
+        ADD_COURSE,
+        VIEW_COURSES,
+        REMOVE_COURSE
     }
 
     public void mainMenu() {
@@ -106,10 +109,14 @@ public class MenuController extends Controller {
             return true;
         }
         AdminStaffMainMenuOption option = AdminStaffMainMenuOption.values()[optionNo];
+        AdminStaffController admin = new AdminStaffController(sharedContext, view, auth, email);
         switch (option) {
             case LOGOUT -> new AuthenticatedUserController(sharedContext, view, auth, email).logout();
             case MANAGE_FAQ -> new AdminStaffController(sharedContext, view, auth, email).manageFAQ();
             case MANAGE_QUERIES -> new AdminStaffController(sharedContext, view, auth, email).manageInquiries();
+            case ADD_COURSE -> admin.addCourse();
+            case VIEW_COURSES -> admin.viewCourses();
+            case REMOVE_COURSE -> admin.removeCourse();
         }
         return false;
     }
