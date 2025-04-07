@@ -123,15 +123,15 @@ public class AdminStaffController extends StaffController {
         // get question
         String question = view.getInput("Enter the question for new FAQ item: ");
         if (question.isBlank()) {
-                LogUtil.logAction(
-                        LocalDateTime.now(),
-                        currentUserEmail,
-                        "addFAQItem",
-                        sectionTopic,
-                        "FAILURE (Error: the question cannot be empty)"
-                );
-                view.displayError("The question cannot be empty");
-                return;
+            LogUtil.logAction(
+                    LocalDateTime.now(),
+                    currentUserEmail,
+                    "addFAQItem",
+                    sectionTopic,
+                    "FAILURE (Error: the question cannot be empty)"
+            );
+            view.displayError("The question cannot be empty");
+            return;
         }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
 
@@ -256,10 +256,14 @@ public class AdminStaffController extends StaffController {
         view.displaySuccess("Inquiry has been reassigned");
     }
 
+    /**
+     * Displays a submenu for course management
+     */
     public void manageCourses() {
         boolean exit = false;
+
         while (!exit) {
-            view.displayInfo("Course Management:");
+            view.displayInfo("=== Course Management ===");
             view.displayInfo("[1] Add Course");
             view.displayInfo("[2] View Courses");
             view.displayInfo("[3] Remove Course");
