@@ -139,10 +139,10 @@ public class MenuController extends Controller {
             case MANAGE_COURSES ->
                     adminStaffController.manageCourses();
             case VIEW_COURSES ->
-                    adminStaffController.viewCourses();
+                    viewerController.viewCourses();
             case VIEW_SPECIFIC_COURSE -> {
                 String courseCode = view.getInput("Enter course code: ");
-                new ViewerController(sharedContext, view, auth, email).viewSpecificCourse(courseCode);
+                viewerController.viewSpecificCourse(courseCode);
             }
         }
         return false;
