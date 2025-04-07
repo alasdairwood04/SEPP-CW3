@@ -123,15 +123,15 @@ public class AdminStaffController extends StaffController {
         // get question
         String question = view.getInput("Enter the question for new FAQ item: ");
         if (question.isBlank()) {
-                LogUtil.logAction(
-                        LocalDateTime.now(),
-                        currentUserEmail,
-                        "addFAQItem",
-                        sectionTopic,
-                        "FAILURE (Error: the question cannot be empty)"
-                );
-                view.displayError("The question cannot be empty");
-                return;
+            LogUtil.logAction(
+                    LocalDateTime.now(),
+                    currentUserEmail,
+                    "addFAQItem",
+                    sectionTopic,
+                    "FAILURE (Error: the question cannot be empty)"
+            );
+            view.displayError("The question cannot be empty");
+            return;
         }
         String answer = view.getInput("Enter the answer for new FAQ item: ");
 
@@ -257,6 +257,40 @@ public class AdminStaffController extends StaffController {
     }
 
     /**
+     * Displays a submenu for course management
+     */
+    public void manageCourses() {
+        boolean exit = false;
+
+        while (!exit) {
+            view.displayInfo("=== Course Management ===");
+            view.displayInfo("[1] Add Course");
+            view.displayInfo("[2] View Courses");
+            view.displayInfo("[3] Remove Course");
+            view.displayInfo("[0] Back to Main Menu");
+
+            int choice = view.getIntegerInput("Enter your choice: ");
+
+            switch (choice) {
+                case 1:
+                    addCourse();
+                    break;
+                case 2:
+                    viewCourses();
+                    break;
+                case 3:
+                    removeCourse();
+                    break;
+                case 0:
+                    exit = true;
+                    break;
+                default:
+                    view.displayError("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    /**
      * Add a new course to the system.
      */
 
@@ -310,23 +344,8 @@ public class AdminStaffController extends StaffController {
                 String location = view.getInput("Enter location: ");
                 DayOfWeek day = DayOfWeek.valueOf(view.getInput("Enter day of week (e.g., MONDAY): ").toUpperCase());
 
-                Activity newActivity = new ConcreteActivity(id, startDate, startTime, endDate, endTime, location, day);
-                // Check for overlap
-                boolean conflict = false;
-                for (Activity existing : course.getActivities()) {
-                    if (newActivity.overlapsWith(existing)) {
-                        conflict = true;
-                        break;
-                    }
-                }
-
-                if (conflict) {
-                    view.displayWarning("This activity overlaps with an existing one. Skipped.");
-                } else {
-                    course.addActivity(newActivity);
-                    view.displaySuccess("Activity added.");
-                }
-                course.addActivity(newActivity);
+                Activity activity = new ConcreteActivity(id, startDate, startTime, endDate, endTime, location, day);
+                course.addActivity(activity);
 
             } catch (Exception e) {
                 view.displayError("Invalid activity input. Please try again.");

@@ -14,6 +14,8 @@ public class MenuController extends Controller {
         LOGIN,
         CONSULT_FAQ,
         CONTACT_STAFF,
+        VIEW_COURSES,
+        VIEW_SPECIFIC_COURSE
     }
 
     public enum StudentMainMenuOption {
@@ -23,22 +25,25 @@ public class MenuController extends Controller {
         ADD_COURSE_TO_TIMETABLE,
         VIEW_TIMETABLE,
         CHOOSE_ACTIVITY_FOR_COURSE,
-        REMOVE_COURSE_FROM_TIMETABLE
+        REMOVE_COURSE_FROM_TIMETABLE,
+        VIEW_COURSES,
+        VIEW_SPECIFIC_COURSE
     }
-
 
     public enum TeachingStaffMainMenuOption {
         LOGOUT,
         MANAGE_RECEIVED_QUERIES,
+        VIEW_COURSES,
+        VIEW_SPECIFIC_COURSE
     }
 
     public enum AdminStaffMainMenuOption {
         LOGOUT,
         MANAGE_QUERIES,
         MANAGE_FAQ,
-        ADD_COURSE,
+        MANAGE_COURSES,
         VIEW_COURSES,
-        REMOVE_COURSE
+        VIEW_SPECIFIC_COURSE
     }
 
     public void mainMenu() {
@@ -77,6 +82,11 @@ public class MenuController extends Controller {
             case LOGIN -> new GuestController(sharedContext, view, auth, email).login();
             case CONSULT_FAQ -> new InquirerController(sharedContext, view, auth, email).consultFAQ();
             case CONTACT_STAFF -> new InquirerController(sharedContext, view, auth, email).contactStaff();
+            case VIEW_COURSES -> new ViewerController(sharedContext, view, auth, email).viewCourses();
+            case VIEW_SPECIFIC_COURSE -> {
+                String courseCode = view.getInput("Enter course code: ");
+                new ViewerController(sharedContext, view, auth, email).viewSpecificCourse(courseCode);
+            }
         }
         return false;
     }
@@ -103,10 +113,15 @@ public class MenuController extends Controller {
                     studentController.chooseActivityForCourse();
             case REMOVE_COURSE_FROM_TIMETABLE ->
                     studentController.removeCourseFromTimetable();
+            case VIEW_COURSES ->
+                    new ViewerController(sharedContext, view, auth, email).viewCourses();
+            case VIEW_SPECIFIC_COURSE -> {
+                String courseCode = view.getInput("Enter course code: ");
+                new ViewerController(sharedContext, view, auth, email).viewSpecificCourse(courseCode);
+            }
         }
         return false;
     }
-
 
     private boolean handleTeachingStaffMainMenu() {
         int optionNo = selectFromMenu(TeachingStaffMainMenuOption.values(), "Exit");
@@ -117,6 +132,11 @@ public class MenuController extends Controller {
         switch (option) {
             case LOGOUT -> new AuthenticatedUserController(sharedContext, view, auth, email).logout();
             case MANAGE_RECEIVED_QUERIES -> new TeachingStaffController(sharedContext, view, auth, email).manageReceivedInquiries();
+            case VIEW_COURSES -> new ViewerController(sharedContext, view, auth, email).viewCourses();
+            case VIEW_SPECIFIC_COURSE -> {
+                String courseCode = view.getInput("Enter course code: ");
+                new ViewerController(sharedContext, view, auth, email).viewSpecificCourse(courseCode);
+            }
         }
         return false;
     }
@@ -127,14 +147,23 @@ public class MenuController extends Controller {
             return true;
         }
         AdminStaffMainMenuOption option = AdminStaffMainMenuOption.values()[optionNo];
-        AdminStaffController admin = new AdminStaffController(sharedContext, view, auth, email);
+        AdminStaffController adminStaffController = new AdminStaffController(sharedContext, view, auth, email);
+
         switch (option) {
-            case LOGOUT -> new AuthenticatedUserController(sharedContext, view, auth, email).logout();
-            case MANAGE_FAQ -> new AdminStaffController(sharedContext, view, auth, email).manageFAQ();
-            case MANAGE_QUERIES -> new AdminStaffController(sharedContext, view, auth, email).manageInquiries();
-            case ADD_COURSE -> admin.addCourse();
-            case VIEW_COURSES -> admin.viewCourses();
-            case REMOVE_COURSE -> admin.removeCourse();
+            case LOGOUT ->
+                    new AuthenticatedUserController(sharedContext, view, auth, email).logout();
+            case MANAGE_FAQ ->
+                    adminStaffController.manageFAQ();
+            case MANAGE_QUERIES ->
+                    adminStaffController.manageInquiries();
+            case MANAGE_COURSES ->
+                    adminStaffController.manageCourses();
+            case VIEW_COURSES ->
+                    new ViewerController(sharedContext, view, auth, email).viewCourses();
+            case VIEW_SPECIFIC_COURSE -> {
+                String courseCode = view.getInput("Enter course code: ");
+                new ViewerController(sharedContext, view, auth, email).viewSpecificCourse(courseCode);
+            }
         }
         return false;
     }
